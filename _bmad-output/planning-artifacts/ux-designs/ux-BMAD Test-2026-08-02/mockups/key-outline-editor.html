@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sanabel — Course outline editor (key screen)</title>
+<style>
+/*
+  KEY SCREEN: Course outline editor (Instructor — Yousef)
+  Governed by:
+    DESIGN.md      -> frontmatter colors/typography/rounded/spacing/components tokens (all below);
+                       "Colors" (accent = single CTA "Publish"; secondary = Instructor-only chrome);
+                       "Elevation & Depth" -> shadow only on hover/drag states, flat elsewhere;
+                       "Layout & Spacing" -> "RTL is a layout requirement" (logical properties,
+                       mirrored drag handle/chevrons; code stays LTR even inside RTL pages);
+                       "Components" -> Badge-style tag chips, Button
+    EXPERIENCE.md  -> Information Architecture row "Course outline editor" (FR-7, FR-8, FR-12);
+                       Component Patterns -> "Autosave" row (no save button, "Editing…"->"Saved.",
+                       ~600-800ms pause), "Drag-reorder outline" row (keyboard equivalent required),
+                       "Upload with retry" row (status always visible, inline Retry);
+                       Voice and Tone -> "Processing your video — this can take a few minutes.",
+                       "Upload failed. Retry?", "Saved.";
+                       State Patterns -> "Video/PDF lesson / Upload processing" and
+                       "Video/PDF lesson / Upload failed";
+                       Accessibility Floor -> drag has a keyboard "move up/down" equivalent;
+                       Key Flows UJ-1 steps 3 ("brain-dumps lesson titles across a
+                       'Getting Your Data' module") and 4 ("Drag-reorders lessons directly
+                       in the outline without opening each one")
+
+  Two states shown (per key-screens.md: canonical + one load-bearing alternate, same file):
+    Section A — canonical outline: nested Modules -> Lessons, mid-drag-reorder, autosave "Saved."
+    Section B — alternate: a video lesson row mid-upload (processing) and one failed (Retry),
+                zoomed into Module 1 per EXPERIENCE.md State Patterns
+
+  Each state rendered twice — English (LTR) and Arabic (RTL) — to demonstrate DESIGN.md's
+  "RTL is a layout requirement, not a mirroring afterthought" claim. SQL keywords in lesson
+  titles are left untranslated/LTR by convention, consistent with "code stays LTR" rule.
+*/
+:root{
+  --primary:#B8842E;
+  --primary-fg:#FFFFFF;
+  --secondary:#1F4A3D;
+  --secondary-fg:#FFFFFF;
+  --accent:#D9622B;
+  --accent-fg:#FFFFFF;
+  --success:#2E7D4F;
+  --warning:#9C6B12;
+  --error:#C23B3B;
+  --surface-base:#FBF8F2;
+  --surface-raised:#FFFFFF;
+  --surface-sunken:#F1EAD9;
+  --text-primary:#1E1B16;
+  --text-secondary:#5C5548;
+  --text-disabled:#A79E8E;
+  --border-hairline:#E4DAC4;
+  --font-ui:"Inter","IBM Plex Sans Arabic",sans-serif;
+  --font-code:"JetBrains Mono",monospace;
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-full:9999px;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  padding:32px 24px;
+  background:#EFE7D4;
+  font-family:var(--font-ui);
+  color:var(--text-primary);
+}
+h1.page-title{ font-size:22px; font-weight:700; margin:0 0 4px 0; }
+p.page-sub{ font-size:14px; color:var(--text-secondary); margin:0 0 24px 0; max-width:900px; }
+.state-section{ margin-bottom:48px; }
+.state-label{
+  display:inline-block;
+  font-size:13px; font-weight:600; letter-spacing:0.02em;
+  color:var(--secondary-fg); background:var(--secondary);
+  border-radius:var(--r-full); padding:4px 14px; margin-bottom:16px;
+  max-width:900px;
+}
+.frame-stack{ display:flex; flex-direction:column; gap:28px; }
+.frame-caption{ font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:8px; }
+
+/* Browser device frame */
+.browser{
+  width:920px;
+  max-width:100%;
+  border-radius:var(--r-lg);
+  background:#D8CCA8;
+  box-shadow:0 10px 26px rgba(30,27,22,0.18);
+  overflow:hidden;
+}
+.browser-bar{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px;
+  background:#D8CCA8;
+}
+.dot{ width:10px; height:10px; border-radius:50%; background:#B8AB86; }
+.url-pill{
+  flex:1;
+  background:var(--surface-raised);
+  border-radius:var(--r-full);
+  padding:6px 14px;
+  font-size:12px;
+  color:var(--text-secondary);
+  font-family:var(--font-code);
+}
+.browser-screen{
+  background:var(--surface-base);
+  min-height:60px;
+}
+
+/* App chrome inside outline editor */
+.editor-header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 24px;
+  border-bottom:1px solid var(--border-hairline);
+  background:var(--surface-raised);
+}
+.editor-header-left{ display:flex; align-items:center; gap:12px; }
+.crumb{ font-size:13px; color:var(--text-secondary); }
+.editor-title{ font-size:18px; font-weight:700; margin:0; }
+.role-badge{
+  font-size:12px; font-weight:600; letter-spacing:0.02em;
+  background:var(--secondary); color:var(--secondary-fg);
+  border-radius:var(--r-full); padding:3px 10px;
+}
+.editor-header-right{ display:flex; align-items:center; gap:14px; }
+.autosave{
+  font-size:13px; color:var(--text-secondary);
+  display:flex; align-items:center; gap:6px;
+}
+.autosave .dot-saved{ width:6px; height:6px; border-radius:50%; background:var(--success); }
+.btn-secondary{
+  background:transparent; color:var(--text-primary);
+  border:1px solid var(--border-hairline);
+  border-radius:var(--r-md); padding:8px 14px;
+  font-size:13px; font-weight:600; font-family:var(--font-ui);
+}
+.btn-accent{
+  background:var(--accent); color:var(--accent-fg);
+  border:none; border-radius:var(--r-md); padding:9px 16px;
+  font-size:13px; font-weight:700; font-family:var(--font-ui);
+}
+.lang-toggle{
+  display:flex; background:var(--surface-sunken); border-radius:var(--r-full); padding:2px; font-size:12px; font-weight:600;
+}
+.lang-toggle span{ padding:4px 10px; border-radius:var(--r-full); color:var(--text-secondary); }
+.lang-toggle span.active{ color:var(--primary); background:var(--surface-raised); }
+
+.editor-body{ padding:22px 24px 28px 24px; }
+
+/* Module block */
+.module-block{ margin-bottom:22px; }
+.module-header{
+  display:flex; align-items:center; gap:10px;
+  padding:8px 10px;
+  border-radius:var(--r-sm);
+}
+.module-drag{ color:var(--text-disabled); font-size:14px; letter-spacing:2px; cursor:default; }
+.module-name{ font-size:16px; font-weight:700; flex:1; }
+.add-lesson-link{ font-size:13px; color:var(--primary); font-weight:600; }
+
+.lesson-row{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 10px 10px 34px;
+  margin-inline-start:8px;
+  border-radius:var(--r-sm);
+  border:1px solid transparent;
+}
+[dir="rtl"] .lesson-row{ padding:10px 34px 10px 10px; }
+.lesson-row:hover{ background:var(--surface-sunken); }
+.drag-handle{
+  color:var(--text-disabled);
+  font-size:14px;
+  letter-spacing:2px;
+  width:16px;
+  flex:none;
+}
+.reorder-arrows{
+  display:flex; flex-direction:column; gap:0px;
+  font-size:9px; color:var(--text-disabled);
+  flex:none;
+  line-height:1;
+}
+.type-chip{
+  font-size:11px; font-weight:600; letter-spacing:0.02em;
+  background:var(--surface-sunken); color:var(--text-secondary);
+  border-radius:var(--r-full); padding:3px 9px;
+  flex:none;
+}
+.lesson-title{ font-size:14px; color:var(--text-primary); flex:1; }
+.lesson-chevron{ color:var(--text-disabled); font-size:13px; }
+[dir="rtl"] .lesson-chevron{ transform:scaleX(-1); display:inline-block; }
+
+/* Drag-active demo row */
+.lesson-row.dragging{
+  background:var(--surface-raised);
+  box-shadow:0 6px 14px rgba(30,27,22,0.16);
+  transform:rotate(-0.6deg);
+  border:1px solid var(--border-hairline);
+}
+[dir="rtl"] .lesson-row.dragging{ transform:rotate(0.6deg); }
+.drop-indicator{
+  height:2px;
+  background:var(--accent);
+  margin:2px 10px 2px 34px;
+  border-radius:2px;
+  position:relative;
+}
+[dir="rtl"] .drop-indicator{ margin:2px 34px 2px 10px; }
+.drop-indicator::before{
+  content:"";
+  position:absolute;
+  inset-inline-start:-5px;
+  top:-3px;
+  width:8px;height:8px;
+  border-radius:50%;
+  background:var(--accent);
+}
+
+.collapsed-row{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:9px 10px;
+  border-top:1px solid var(--border-hairline);
+  color:var(--text-secondary);
+  font-size:13px;
+}
+
+/* Upload state rows (Section B) */
+.status-row{
+  display:flex; align-items:center; gap:10px;
+  padding:12px 10px 12px 34px;
+  margin-inline-start:8px;
+  border-radius:var(--r-sm);
+  background:var(--surface-sunken);
+}
+[dir="rtl"] .status-row{ padding:12px 34px 12px 10px; }
+.status-row.failed{ background:#F7E7E5; }
+.status-icon{
+  width:22px;height:22px;border-radius:50%;
+  flex:none; display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:700; color:#fff;
+}
+.status-icon.processing{ background:var(--warning); }
+.status-icon.failed{ background:var(--error); }
+.status-text-block{ flex:1; }
+.status-lesson-title{ font-size:14px; font-weight:600; color:var(--text-primary); margin:0 0 2px 0; }
+.status-msg{ font-size:13px; color:var(--text-secondary); margin:0; }
+.status-msg.failed-msg{ color:var(--error); font-weight:600; }
+.retry-link{
+  font-size:13px; font-weight:700; color:var(--primary);
+  background:none; border:none; flex:none;
+}
+</style>
+</head>
+<body>
+
+<h1 class="page-title">Sanabel — Course outline editor</h1>
+<p class="page-sub">Key screen: Instructor's course-builder hero surface (EXPERIENCE.md Information Architecture — FR-7, FR-8, FR-12). Canonical mid-drag-reorder state and the upload processing/failed alternate, each shown English/LTR and Arabic/RTL.</p>
+
+<!-- ===================== SECTION A: CANONICAL OUTLINE, MID DRAG-REORDER ===================== -->
+<div class="state-section">
+  <span class="state-label">State: Outline editor at rest, reordering lessons mid-drag — no save button, autosaves on pause (Component Patterns "Autosave," "Drag-reorder outline"; UJ-1 steps 3&ndash;4)</span>
+  <div class="frame-stack">
+
+    <!-- EN -->
+    <div>
+      <div class="frame-caption">English — LTR</div>
+      <div class="browser">
+        <div class="browser-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <div class="url-pill">sanabel.app/courses/sql-for-beginners/outline</div>
+        </div>
+        <div class="browser-screen" dir="ltr" lang="en">
+          <div class="editor-header">
+            <div class="editor-header-left">
+              <span class="crumb">My Courses /</span>
+              <h2 class="editor-title">SQL for Beginners</h2>
+              <span class="role-badge">Instructor</span>
+            </div>
+            <div class="editor-header-right">
+              <span class="autosave"><span class="dot-saved"></span>Saved.</span>
+              <button class="btn-secondary">Preview as learner</button>
+              <button class="btn-accent">Publish</button>
+              <div class="lang-toggle"><span class="active">EN</span><span>AR</span></div>
+            </div>
+          </div>
+          <div class="editor-body">
+
+            <div class="module-block">
+              <div class="module-header">
+                <span class="module-drag">&#8942;&#8942;</span>
+                <span class="module-name">Getting Your Data</span>
+                <span class="add-lesson-link">+ Add lesson</span>
+              </div>
+
+              <div class="lesson-row">
+                <span class="drag-handle">&#8942;&#8942;</span>
+                <span class="reorder-arrows">&#9650;&#9660;</span>
+                <span class="type-chip">VIDEO</span>
+                <span class="lesson-title">What is a SELECT statement?</span>
+                <span class="lesson-chevron">&#8250;</span>
+              </div>
+
+              <div class="drop-indicator"></div>
+
+              <div class="lesson-row dragging">
+                <span class="drag-handle">&#8942;&#8942;</span>
+                <span class="reorder-arrows">&#9650;&#9660;</span>
+                <span class="type-chip">QUIZ</span>
+                <span class="lesson-title">Sorting results with ORDER BY</span>
+                <span class="lesson-chevron">&#8250;</span>
+              </div>
+
+              <div class="lesson-row">
+                <span class="drag-handle">&#8942;&#8942;</span>
+                <span class="reorder-arrows">&#9650;&#9660;</span>
+                <span class="type-chip">TEXT</span>
+                <span class="lesson-title">Filtering rows with WHERE</span>
+                <span class="lesson-chevron">&#8250;</span>
+              </div>
+            </div>
+
+            <div class="module-block">
+              <div class="module-header">
+                <span class="module-drag">&#8942;&#8942;</span>
+                <span class="module-name">Joining Tables</span>
+                <span class="add-lesson-link">+ Add lesson</span>
+              </div>
+              <div class="lesson-row"><span class="drag-handle">&#8942;&#8942;</span><span class="reorder-arrows">&#9650;&#9660;</span><span class="type-chip">VIDEO</span><span class="lesson-title">Introduction to JOINs</span><span class="lesson-chevron">&#8250;</span></div>
+              <div class="lesson-row"><span class="drag-handle">&#8942;&#8942;</span><span class="reorder-arrows">&#9650;&#9660;</span><span class="type-chip">TEXT</span><span class="lesson-title">INNER vs LEFT JOIN</span><span class="lesson-chevron">&#8250;</span></div>
+              <div class="lesson-row"><span class="drag-handle">&#8942;&#8942;</span><span class="reorder-arrows">&#9650;&#9660;</span><span class="type-chip">CODE</span><span class="lesson-title">Practice: Multi-table Queries</span><span class="lesson-chevron">&#8250;</span></div>
+            </div>
+
+            <div class="collapsed-row"><span>Aggregating &amp; Grouping</span><span>3 lessons</span></div>
+            <div class="collapsed-row"><span>Writing Better Queries</span><span>3 lessons</span></div>
+            <div class="collapsed-row"><span>Final Project</span><span>2 lessons</span></div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AR -->
+    <div>
+      <div class="frame-caption">Arabic — RTL (mirrored)</div>
+      <div class="browser">
+        <div class="browser-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <div class="url-pill">sanabel.app/courses/sql-for-beginners/outline</div>
+        </div>
+        <div class="browser-screen" dir="rtl" lang="ar">
+          <div class="editor-header">
+            <div class="editor-header-left">
+              <span class="crumb">دوراتي /</span>
+              <h2 class="editor-title">SQL للمبتدئين</h2>
+              <span class="role-badge">مدرّس</span>
+            </div>
+            <div class="editor-header-right">
+              <span class="autosave"><span class="dot-saved"></span>تم الحفظ.</span>
+              <button class="btn-secondary">معاينة كمتعلم</button>
+              <button class="btn-accent">نشر</button>
+              <div class="lang-toggle"><span>EN</span><span class="active">AR</span></div>
+            </div>
+          </div>
+          <div class="editor-body">
+
+            <div class="module-block">
+              <div class="module-header">
+                <span class="module-drag">&#8942;&#8942;</span>
+                <span class="module-name">الحصول على بياناتك</span>
+                <span class="add-lesson-link">+ إضافة درس</span>
+              </div>
+
+              <div class="lesson-row">
+                <span class="drag-handle">&#8942;&#8942;</span>
+                <span class="reorder-arrows">&#9650;&#9660;</span>
+                <span class="type-chip">فيديو</span>
+                <span class="lesson-title">ما هي جملة SELECT؟</span>
+                <span class="lesson-chevron">&#8249;</span>
+              </div>
+
+              <div class="drop-indicator"></div>
+
+              <div class="lesson-row dragging">
+                <span class="drag-handle">&#8942;&#8942;</span>
+                <span class="reorder-arrows">&#9650;&#9660;</span>
+                <span class="type-chip">اختبار</span>
+                <span class="lesson-title">ترتيب النتائج باستخدام ORDER BY</span>
+                <span class="lesson-chevron">&#8249;</span>
+              </div>
+
+              <div class="lesson-row">
+                <span class="drag-handle">&#8942;&#8942;</span>
+                <span class="reorder-arrows">&#9650;&#9660;</span>
+                <span class="type-chip">نص</span>
+                <span class="lesson-title">تصفية الصفوف باستخدام WHERE</span>
+                <span class="lesson-chevron">&#8249;</span>
+              </div>
+            </div>
+
+            <div class="module-block">
+              <div class="module-header">
+                <span class="module-drag">&#8942;&#8942;</span>
+                <span class="module-name">دمج الجداول</span>
+                <span class="add-lesson-link">+ إضافة درس</span>
+              </div>
+              <div class="lesson-row"><span class="drag-handle">&#8942;&#8942;</span><span class="reorder-arrows">&#9650;&#9660;</span><span class="type-chip">فيديو</span><span class="lesson-title">مقدمة عن JOIN</span><span class="lesson-chevron">&#8249;</span></div>
+              <div class="lesson-row"><span class="drag-handle">&#8942;&#8942;</span><span class="reorder-arrows">&#9650;&#9660;</span><span class="type-chip">نص</span><span class="lesson-title">INNER مقابل LEFT JOIN</span><span class="lesson-chevron">&#8249;</span></div>
+              <div class="lesson-row"><span class="drag-handle">&#8942;&#8942;</span><span class="reorder-arrows">&#9650;&#9660;</span><span class="type-chip">كود</span><span class="lesson-title">تمرين: استعلامات متعددة الجداول</span><span class="lesson-chevron">&#8249;</span></div>
+            </div>
+
+            <div class="collapsed-row"><span>التجميع والتصنيف</span><span>3 دروس</span></div>
+            <div class="collapsed-row"><span>كتابة استعلامات أفضل</span><span>3 دروس</span></div>
+            <div class="collapsed-row"><span>المشروع النهائي</span><span>2 درس</span></div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== SECTION B: UPLOAD PROCESSING / FAILED ON A VIDEO LESSON ROW ===================== -->
+<div class="state-section">
+  <span class="state-label">State: Video lesson rows mid-upload — status always visible, never silent (Component Patterns "Upload with retry"; State Patterns "Upload processing" / "Upload failed"; UJ-1 failure path)</span>
+  <div class="frame-stack">
+
+    <!-- EN -->
+    <div>
+      <div class="frame-caption">English — LTR</div>
+      <div class="browser" style="width:640px;">
+        <div class="browser-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <div class="url-pill">sanabel.app/courses/sql-for-beginners/outline</div>
+        </div>
+        <div class="browser-screen" dir="ltr" lang="en">
+          <div class="editor-header">
+            <div class="editor-header-left">
+              <span class="crumb">My Courses /</span>
+              <h2 class="editor-title">SQL for Beginners</h2>
+              <span class="role-badge">Instructor</span>
+            </div>
+            <div class="editor-header-right">
+              <span class="autosave"><span class="dot-saved"></span>Saved.</span>
+            </div>
+          </div>
+          <div class="editor-body">
+            <div class="module-block">
+              <div class="module-header">
+                <span class="module-drag">&#8942;&#8942;</span>
+                <span class="module-name">Getting Your Data</span>
+              </div>
+
+              <div class="status-row">
+                <span class="status-icon processing">&#8635;</span>
+                <div class="status-text-block">
+                  <p class="status-lesson-title">What is a SELECT statement? &mdash; Video</p>
+                  <p class="status-msg">Processing your video — this can take a few minutes.</p>
+                </div>
+              </div>
+
+              <div class="status-row failed">
+                <span class="status-icon failed">&#33;</span>
+                <div class="status-text-block">
+                  <p class="status-lesson-title">Introduction to JOINs &mdash; Video</p>
+                  <p class="status-msg failed-msg">Upload failed. Retry?</p>
+                </div>
+                <button class="retry-link">Retry</button>
+              </div>
+
+              <div class="lesson-row">
+                <span class="drag-handle">&#8942;&#8942;</span>
+                <span class="reorder-arrows">&#9650;&#9660;</span>
+                <span class="type-chip">TEXT</span>
+                <span class="lesson-title">Filtering rows with WHERE</span>
+                <span class="lesson-chevron">&#8250;</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AR -->
+    <div>
+      <div class="frame-caption">Arabic — RTL (mirrored)</div>
+      <div class="browser" style="width:640px;">
+        <div class="browser-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <div class="url-pill">sanabel.app/courses/sql-for-beginners/outline</div>
+        </div>
+        <div class="browser-screen" dir="rtl" lang="ar">
+          <div class="editor-header">
+            <div class="editor-header-left">
+              <span class="crumb">دوراتي /</span>
+              <h2 class="editor-title">SQL للمبتدئين</h2>
+              <span class="role-badge">مدرّس</span>
+            </div>
+            <div class="editor-header-right">
+              <span class="autosave"><span class="dot-saved"></span>تم الحفظ.</span>
+            </div>
+          </div>
+          <div class="editor-body">
+            <div class="module-block">
+              <div class="module-header">
+                <span class="module-drag">&#8942;&#8942;</span>
+                <span class="module-name">الحصول على بياناتك</span>
+              </div>
+
+              <div class="status-row">
+                <span class="status-icon processing">&#8635;</span>
+                <div class="status-text-block">
+                  <p class="status-lesson-title">ما هي جملة SELECT؟ &mdash; فيديو</p>
+                  <p class="status-msg">جارٍ معالجة الفيديو — قد يستغرق ذلك بضع دقائق.</p>
+                </div>
+              </div>
+
+              <div class="status-row failed">
+                <span class="status-icon failed">&#33;</span>
+                <div class="status-text-block">
+                  <p class="status-lesson-title">مقدمة عن JOIN &mdash; فيديو</p>
+                  <p class="status-msg failed-msg">فشل الرفع. إعادة المحاولة؟</p>
+                </div>
+                <button class="retry-link">إعادة المحاولة</button>
+              </div>
+
+              <div class="lesson-row">
+                <span class="drag-handle">&#8942;&#8942;</span>
+                <span class="reorder-arrows">&#9650;&#9660;</span>
+                <span class="type-chip">نص</span>
+                <span class="lesson-title">تصفية الصفوف باستخدام WHERE</span>
+                <span class="lesson-chevron">&#8249;</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(PYTHONIOENCODING=utf-8 python _bmad/scripts/resolve_config.py --project-root \"D:\\\\Projects\\\\BMAD Test\")",
+      "Bash(PYTHONIOENCODING=utf-8 python \"_bmad/scripts/resolve_customization.py\" --skill \".claude/skills/bmad-product-brief\" --key workflow)",
+      "Bash(PYTHONIOENCODING=utf-8 python \"_bmad/scripts/memlog.py\" init --workspace \"_bmad-output/planning-artifacts/briefs/brief-BMAD Test-2026-07-30\" --field topic=\"Sanabel\")",
+      "Bash(uv run *)",
+      "Bash(python _bmad/scripts/resolve_customization.py --skill \".claude/skills/bmad-prd\" --key workflow)"
+    ]
+  }
+}

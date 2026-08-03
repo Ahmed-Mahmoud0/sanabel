@@ -1,0 +1,102 @@
+# generated: 2026-08-03
+# last_updated: 2026-08-03
+# project: BMAD Test
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: {project-root}/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; sprint-status surfaces open ones
+
+generated: 2026-08-03
+last_updated: 2026-08-03
+project: BMAD Test
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  epic-1: in-progress
+  1-0-project-scaffold-deployment-pipeline: in-progress
+  1-1-email-password-sign-up-sign-in: backlog
+  1-2-social-login-with-google-github: backlog
+  1-3-role-model-role-gated-navigation: backlog
+  1-4-admin-grants-and-revokes-instructor-role: backlog
+  1-5-profile-basics: backlog
+  1-6-bilingual-ui-shell-language-switcher: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-low-friction-course-creation: backlog
+  2-2-outline-first-module-lesson-structuring: backlog
+  2-3-drag-reorder-outline: backlog
+  2-4-video-lesson-authoring-upload-lifecycle: backlog
+  2-5-text-lesson-authoring: backlog
+  2-6-pdf-lesson-authoring-upload-lifecycle: backlog
+  2-7-quiz-lesson-authoring: backlog
+  2-8-interactive-code-exercise-authoring: backlog
+  2-9-learner-accurate-preview: backlog
+  2-10-publish-with-visibility-and-category: backlog
+  2-11-post-publish-content-changes: backlog
+  2-12-instructor-analytics: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-browse-and-search-public-courses: backlog
+  3-2-course-detail-page: backlog
+  3-3-enrollment: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-progress-tracking-display: backlog
+  4-2-resume-where-left-off: backlog
+  4-3-video-playback-controls: backlog
+  4-4-quiz-taking-grading: backlog
+  4-5-interactive-code-exercise-taking-grading: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-certificate-on-completion: backlog
+  5-2-post-completion-rating-review: backlog
+  5-3-aggregate-rating-display: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-comment-threads-on-courses-and-lessons: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-admin-moderation-console: backlog
+  epic-7-retrospective: optional

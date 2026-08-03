@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sanabel — Course home (key screen)</title>
+<style>
+/*
+  KEY SCREEN: Course home (Learner — Lina)
+  Governed by:
+    DESIGN.md        -> frontmatter colors/typography/rounded/spacing/components tokens (all below);
+                         "Colors" (primary=progress/CTA-adjacent, accent=one CTA per screen),
+                         "Typography" (Inter+IBM Plex Sans Arabic stack, Western numerals both languages),
+                         "Layout & Spacing" -> "RTL is a layout requirement" (logical properties, mirrored icons),
+                         "Components" -> Progress bar, Badge, Button
+    EXPERIENCE.md     -> Information Architecture row "Course home" (FR-20, FR-21, FR-25);
+                         Component Patterns -> "Progress bar" row (dual display: bar + per-lesson checkmarks agree);
+                         Voice and Tone -> "2 of 14 lessons complete", "You did it. Download your certificate.";
+                         State Patterns -> "Course home / Learner returns after weeks away" and
+                                           "Course home / Just completed";
+                         Key Flows UJ-2 steps 4 ("Lands on course home...") and 6 ("Tracks progress two ways...")
+
+  Two states shown (per key-screens.md: canonical + one load-bearing alternate, same file):
+    Section A — canonical "in progress" state, resumes via Continue (UJ-2 step 4)
+    Section B — alternate "just completed" state: certificate-ready + rating prompt (State Patterns row)
+
+  Each state rendered twice — English (LTR) and Arabic (RTL) — to demonstrate DESIGN.md's
+  "RTL is a layout requirement, not a mirroring afterthought" claim, not just assert it.
+  Non-directional icons (checkmarks) do not mirror; directional icons (back/continue chevrons) do.
+*/
+:root{
+  --primary:#B8842E;
+  --primary-fg:#FFFFFF;
+  --secondary:#1F4A3D;
+  --secondary-fg:#FFFFFF;
+  --accent:#D9622B;
+  --accent-fg:#FFFFFF;
+  --success:#2E7D4F;
+  --surface-base:#FBF8F2;
+  --surface-raised:#FFFFFF;
+  --surface-sunken:#F1EAD9;
+  --text-primary:#1E1B16;
+  --text-secondary:#5C5548;
+  --text-disabled:#A79E8E;
+  --border-hairline:#E4DAC4;
+  --font-ui:"Inter","IBM Plex Sans Arabic",sans-serif;
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-full:9999px;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  padding:32px 16px;
+  background:#EFE7D4;
+  font-family:var(--font-ui);
+  color:var(--text-primary);
+}
+h1.page-title{
+  font-family:var(--font-ui);
+  font-size:22px;
+  font-weight:700;
+  margin:0 0 4px 0;
+}
+p.page-sub{
+  font-family:var(--font-ui);
+  font-size:14px;
+  color:var(--text-secondary);
+  margin:0 0 24px 0;
+}
+.state-section{
+  margin-bottom:56px;
+}
+.state-label{
+  display:inline-block;
+  font-family:var(--font-ui);
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:0.02em;
+  color:var(--secondary-fg);
+  background:var(--secondary);
+  border-radius:var(--r-full);
+  padding:4px 14px;
+  margin-bottom:16px;
+}
+.frame-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:32px;
+  align-items:flex-start;
+}
+.frame-col{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:8px;
+}
+.frame-caption{
+  font-family:var(--font-ui);
+  font-size:13px;
+  font-weight:600;
+  color:var(--text-secondary);
+}
+
+/* Phone device frame */
+.phone{
+  width:340px;
+  border-radius:36px;
+  background:#0F0D09;
+  padding:12px;
+  box-shadow:0 12px 28px rgba(30,27,22,0.22);
+}
+.phone-screen{
+  background:var(--surface-base);
+  border-radius:26px;
+  overflow:hidden;
+  min-height:640px;
+  display:flex;
+  flex-direction:column;
+}
+.status-bar{
+  height:28px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px;
+  font-size:12px;
+  color:var(--text-primary);
+  font-weight:600;
+}
+
+/* App chrome */
+.app-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 16px;
+  border-bottom:1px solid var(--border-hairline);
+  background:var(--surface-raised);
+}
+.back-chevron{
+  width:20px;height:20px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-primary);
+  font-size:16px;
+  font-weight:700;
+}
+[dir="rtl"] .back-chevron{ transform:scaleX(-1); }
+.lang-toggle{
+  display:flex;
+  background:var(--surface-sunken);
+  border-radius:var(--r-full);
+  padding:2px;
+  font-size:12px;
+  font-weight:600;
+}
+.lang-toggle span{
+  padding:4px 10px;
+  border-radius:var(--r-full);
+  color:var(--text-secondary);
+}
+.lang-toggle span.active{
+  color:var(--primary);
+  background:var(--surface-raised);
+}
+
+.content{
+  padding:20px 16px 28px 16px;
+  flex:1;
+}
+.course-title{
+  font-family:var(--font-ui);
+  font-size:22px;
+  font-weight:700;
+  line-height:1.25;
+  margin:0 0 6px 0;
+}
+.instructor-line{
+  font-family:var(--font-ui);
+  font-size:14px;
+  color:var(--text-secondary);
+  margin:0 0 10px 0;
+}
+.badge{
+  display:inline-block;
+  font-family:var(--font-ui);
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:0.02em;
+  background:var(--secondary);
+  color:var(--secondary-fg);
+  border-radius:var(--r-full);
+  padding:4px 12px;
+  margin-bottom:18px;
+}
+
+/* Progress block */
+.progress-block{
+  background:var(--surface-raised);
+  border:1px solid var(--border-hairline);
+  border-radius:var(--r-lg);
+  padding:16px;
+  margin-bottom:20px;
+}
+.progress-label{
+  font-size:13px;
+  color:var(--text-secondary);
+  margin:0 0 4px 0;
+}
+.progress-count{
+  font-size:16px;
+  font-weight:600;
+  margin:0 0 10px 0;
+}
+.progress-track{
+  height:8px;
+  border-radius:var(--r-full);
+  background:var(--surface-sunken);
+  overflow:hidden;
+}
+.progress-fill{
+  height:100%;
+  border-radius:var(--r-full);
+  background:var(--primary);
+}
+
+/* Continue button */
+.continue-btn{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+  width:100%;
+  background:var(--accent);
+  color:var(--accent-fg);
+  border:none;
+  border-radius:var(--r-md);
+  padding:12px 16px;
+  margin-bottom:24px;
+  font-family:var(--font-ui);
+  cursor:default;
+}
+.continue-btn .label{
+  font-size:16px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.continue-btn .sub{
+  font-size:13px;
+  font-weight:400;
+  opacity:0.9;
+}
+.continue-arrow{ font-weight:700; }
+[dir="rtl"] .continue-arrow{ transform:scaleX(-1); display:inline-block; }
+
+/* Module / lesson list */
+.module{ margin-bottom:18px; }
+.module-title{
+  font-family:var(--font-ui);
+  font-size:16px;
+  font-weight:600;
+  margin:0 0 8px 0;
+}
+.module-meta{
+  font-size:12px;
+  font-weight:400;
+  color:var(--text-secondary);
+}
+.lesson-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 10px;
+  border-radius:var(--r-sm);
+  margin-bottom:4px;
+}
+.lesson-row.current{
+  background:var(--surface-sunken);
+  border-inline-start:3px solid var(--accent);
+  padding-inline-start:7px;
+}
+.check{
+  width:20px;height:20px;
+  border-radius:var(--r-full);
+  flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;
+  font-weight:700;
+}
+.check.done{ background:var(--success); color:#fff; }
+.check.pending{ border:2px solid var(--border-hairline); background:transparent; }
+.lesson-title{ font-size:14px; color:var(--text-primary); }
+.lesson-row.current .lesson-title{ font-weight:600; }
+.collapsed-module-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 4px;
+  border-bottom:1px solid var(--border-hairline);
+}
+
+/* Completed state */
+.cert-card{
+  background:var(--surface-raised);
+  border:1px solid var(--border-hairline);
+  border-radius:var(--r-lg);
+  padding:20px;
+  text-align:center;
+  margin-bottom:16px;
+}
+.cert-icon{
+  width:48px;height:48px;
+  margin:0 auto 12px auto;
+  border-radius:var(--r-full);
+  background:var(--surface-sunken);
+  color:var(--primary);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+}
+.cert-headline{
+  font-size:18px;
+  font-weight:700;
+  margin:0 0 4px 0;
+}
+.cert-sub{
+  font-size:13px;
+  color:var(--text-secondary);
+  margin:0 0 16px 0;
+}
+.btn-accent{
+  display:inline-block;
+  width:100%;
+  background:var(--accent);
+  color:var(--accent-fg);
+  border:none;
+  border-radius:var(--r-md);
+  padding:12px 16px;
+  font-family:var(--font-ui);
+  font-size:15px;
+  font-weight:700;
+}
+.rating-card{
+  background:var(--surface-raised);
+  border:1px solid var(--border-hairline);
+  border-radius:var(--r-lg);
+  padding:18px;
+}
+.rating-title{
+  font-size:15px;
+  font-weight:700;
+  margin:0 0 10px 0;
+}
+.stars{
+  font-size:22px;
+  color:var(--text-disabled);
+  letter-spacing:4px;
+  margin-bottom:12px;
+}
+.review-input{
+  width:100%;
+  border:1px solid var(--border-hairline);
+  border-radius:var(--r-sm);
+  background:var(--surface-base);
+  padding:10px;
+  font-family:var(--font-ui);
+  font-size:13px;
+  color:var(--text-disabled);
+  min-height:52px;
+  margin-bottom:12px;
+}
+.btn-primary{
+  display:inline-block;
+  width:100%;
+  background:var(--primary);
+  color:var(--primary-fg);
+  border:none;
+  border-radius:var(--r-md);
+  padding:11px 16px;
+  font-family:var(--font-ui);
+  font-size:14px;
+  font-weight:700;
+}
+</style>
+</head>
+<body>
+
+<h1 class="page-title">Sanabel — Course home</h1>
+<p class="page-sub">Key screen: Learner's resume surface (EXPERIENCE.md Information Architecture — FR-20, FR-21, FR-25). Canonical "in progress" state and the "just completed" state, each shown English/LTR and Arabic/RTL.</p>
+
+<!-- ===================== SECTION A: IN PROGRESS (canonical) ===================== -->
+<div class="state-section">
+  <span class="state-label">State: In progress — Continue resumes exactly where Lina left off (UJ-2 step 4; State Patterns "Learner returns after weeks away")</span>
+  <div class="frame-row">
+
+    <!-- EN -->
+    <div class="frame-col">
+      <span class="frame-caption">English — LTR</span>
+      <div class="phone">
+        <div class="phone-screen" dir="ltr" lang="en">
+          <div class="status-bar"><span>9:41</span><span>●●●●</span></div>
+          <div class="app-header">
+            <div class="back-chevron">&#8592;</div>
+            <div class="lang-toggle"><span class="active">EN</span><span>AR</span></div>
+          </div>
+          <div class="content">
+            <h2 class="course-title">SQL for Beginners</h2>
+            <p class="instructor-line">Instructor: Yousef</p>
+            <span class="badge">Taught in: English</span>
+
+            <div class="progress-block">
+              <p class="progress-label">Your progress</p>
+              <p class="progress-count">2 of 14 lessons complete</p>
+              <div class="progress-track"><div class="progress-fill" style="width:14%"></div></div>
+            </div>
+
+            <button class="continue-btn">
+              <span class="label">Continue <span class="continue-arrow">&#8594;</span></span>
+              <span class="sub">Sorting results with ORDER BY</span>
+            </button>
+
+            <div class="module">
+              <p class="module-title">Getting Your Data</p>
+              <div class="lesson-row">
+                <div class="check done">&#10003;</div>
+                <span class="lesson-title">What is a SELECT statement?</span>
+              </div>
+              <div class="lesson-row">
+                <div class="check done">&#10003;</div>
+                <span class="lesson-title">Filtering rows with WHERE</span>
+              </div>
+              <div class="lesson-row current">
+                <div class="check pending"></div>
+                <span class="lesson-title">Sorting results with ORDER BY</span>
+              </div>
+            </div>
+
+            <div class="collapsed-module-row">
+              <span class="module-title" style="margin:0;">Joining Tables</span>
+              <span class="module-meta">0 / 3</span>
+            </div>
+            <div class="collapsed-module-row">
+              <span class="module-title" style="margin:0;">Aggregating &amp; Grouping</span>
+              <span class="module-meta">0 / 3</span>
+            </div>
+            <div class="collapsed-module-row">
+              <span class="module-title" style="margin:0;">Writing Better Queries</span>
+              <span class="module-meta">0 / 3</span>
+            </div>
+            <div class="collapsed-module-row" style="border-bottom:none;">
+              <span class="module-title" style="margin:0;">Final Project</span>
+              <span class="module-meta">0 / 2</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AR -->
+    <div class="frame-col">
+      <span class="frame-caption">Arabic — RTL (mirrored)</span>
+      <div class="phone">
+        <div class="phone-screen" dir="rtl" lang="ar">
+          <div class="status-bar"><span>9:41</span><span>●●●●</span></div>
+          <div class="app-header">
+            <div class="back-chevron">&#8592;</div>
+            <div class="lang-toggle"><span>EN</span><span class="active">AR</span></div>
+          </div>
+          <div class="content">
+            <h2 class="course-title">SQL للمبتدئين</h2>
+            <p class="instructor-line">المدرّس: يوسف</p>
+            <span class="badge">لغة التدريس: الإنجليزية</span>
+
+            <div class="progress-block">
+              <p class="progress-label">تقدّمك</p>
+              <p class="progress-count">2 من 14 درس مكتمل</p>
+              <div class="progress-track"><div class="progress-fill" style="width:14%"></div></div>
+            </div>
+
+            <button class="continue-btn">
+              <span class="label"><span class="continue-arrow">&#8594;</span> متابعة</span>
+              <span class="sub">ترتيب النتائج باستخدام ORDER BY</span>
+            </button>
+
+            <div class="module">
+              <p class="module-title">الحصول على بياناتك</p>
+              <div class="lesson-row">
+                <div class="check done">&#10003;</div>
+                <span class="lesson-title">ما هي جملة SELECT؟</span>
+              </div>
+              <div class="lesson-row">
+                <div class="check done">&#10003;</div>
+                <span class="lesson-title">تصفية الصفوف باستخدام WHERE</span>
+              </div>
+              <div class="lesson-row current">
+                <div class="check pending"></div>
+                <span class="lesson-title">ترتيب النتائج باستخدام ORDER BY</span>
+              </div>
+            </div>
+
+            <div class="collapsed-module-row">
+              <span class="module-title" style="margin:0;">دمج الجداول</span>
+              <span class="module-meta">0 / 3</span>
+            </div>
+            <div class="collapsed-module-row">
+              <span class="module-title" style="margin:0;">التجميع والتصنيف</span>
+              <span class="module-meta">0 / 3</span>
+            </div>
+            <div class="collapsed-module-row">
+              <span class="module-title" style="margin:0;">كتابة استعلامات أفضل</span>
+              <span class="module-meta">0 / 3</span>
+            </div>
+            <div class="collapsed-module-row" style="border-bottom:none;">
+              <span class="module-title" style="margin:0;">المشروع النهائي</span>
+              <span class="module-meta">0 / 2</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== SECTION B: JUST COMPLETED (alternate) ===================== -->
+<div class="state-section">
+  <span class="state-label">State: Just completed — certificate-ready + rating prompt surface immediately (State Patterns "Course home / Just completed"; UJ-2 step 8; FR-26, FR-27)</span>
+  <div class="frame-row">
+
+    <!-- EN -->
+    <div class="frame-col">
+      <span class="frame-caption">English — LTR</span>
+      <div class="phone">
+        <div class="phone-screen" dir="ltr" lang="en">
+          <div class="status-bar"><span>9:41</span><span>●●●●</span></div>
+          <div class="app-header">
+            <div class="back-chevron">&#8592;</div>
+            <div class="lang-toggle"><span class="active">EN</span><span>AR</span></div>
+          </div>
+          <div class="content">
+            <h2 class="course-title">SQL for Beginners</h2>
+            <p class="instructor-line">Instructor: Yousef</p>
+            <span class="badge">Taught in: English</span>
+
+            <div class="progress-block">
+              <p class="progress-label">Your progress</p>
+              <p class="progress-count">14 of 14 lessons complete</p>
+              <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
+            </div>
+
+            <div class="cert-card">
+              <div class="cert-icon">&#127942;</div>
+              <p class="cert-headline">You did it.</p>
+              <p class="cert-sub">Download your certificate.</p>
+              <button class="btn-accent">Download certificate</button>
+            </div>
+
+            <div class="rating-card">
+              <p class="rating-title">Rate this course</p>
+              <div class="stars">&#9734;&#9734;&#9734;&#9734;&#9734;</div>
+              <div class="review-input">Leave a review (optional)</div>
+              <button class="btn-primary">Submit rating</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AR -->
+    <div class="frame-col">
+      <span class="frame-caption">Arabic — RTL (mirrored)</span>
+      <div class="phone">
+        <div class="phone-screen" dir="rtl" lang="ar">
+          <div class="status-bar"><span>9:41</span><span>●●●●</span></div>
+          <div class="app-header">
+            <div class="back-chevron">&#8592;</div>
+            <div class="lang-toggle"><span>EN</span><span class="active">AR</span></div>
+          </div>
+          <div class="content">
+            <h2 class="course-title">SQL للمبتدئين</h2>
+            <p class="instructor-line">المدرّس: يوسف</p>
+            <span class="badge">لغة التدريس: الإنجليزية</span>
+
+            <div class="progress-block">
+              <p class="progress-label">تقدّمك</p>
+              <p class="progress-count">14 من 14 درس مكتمل</p>
+              <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
+            </div>
+
+            <div class="cert-card">
+              <div class="cert-icon">&#127942;</div>
+              <p class="cert-headline">لقد أنجزت الدورة.</p>
+              <p class="cert-sub">حمّل شهادتك.</p>
+              <button class="btn-accent">تحميل الشهادة</button>
+            </div>
+
+            <div class="rating-card">
+              <p class="rating-title">قيّم هذه الدورة</p>
+              <div class="stars">&#9734;&#9734;&#9734;&#9734;&#9734;</div>
+              <div class="review-input">أضف مراجعة (اختياري)</div>
+              <button class="btn-primary">إرسال التقييم</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

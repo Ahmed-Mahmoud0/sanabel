@@ -43,3 +43,5 @@ This repo isn't connected to GitHub/Vercel/Neon yet. To finish wiring the pipeli
 5. In the Vercel project's environment variables, set `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (the production URL), and the Google/GitHub OAuth client id/secret pairs for Production (and Preview, if you want social login to work on previews).
 6. In GitHub repo settings → Secrets and variables → Actions, add `DATABASE_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GH_OAUTH_CLIENT_ID`, `GH_OAUTH_CLIENT_SECRET` so `.github/workflows/ci.yml` can build on PRs.
 7. Push to `main` — Vercel deploys it to production against the Neon primary branch.
+
+<!-- test: verifying Vercel preview + Neon ephemeral branch pipeline (Story 1.0, AC #6/#7) -->

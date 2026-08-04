@@ -4,7 +4,7 @@ baseline_commit: NO_VCS
 
 # Story 1.0: Project Scaffold & Deployment Pipeline
 
-Status: in-progress
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -53,14 +53,29 @@ So that every subsequent story in Epic 1 onward is implementing product features
   - [x] Create empty `lib/modules/{accounts,course-authoring,learning-experience,certificates,discussion,ratings,moderation,code-execution}/` directories per the Architecture source tree — each will get its schema slice + service layer in later stories
   - [x] Create `app/[locale]/(marketing)/`, `(learner)/`, `(instructor)/`, `(admin)/` route groups (can be empty/placeholder pages)
   - [x] Create `app/api/` for future webhook/upload Route Handlers, `emails/` for React Email templates, `drizzle/` for generated migrations
-- [ ] Task 7: CI + Vercel preview pipeline with Neon branching (AC: #6, #7) — **BLOCKED: needs user's GitHub/Vercel/Neon accounts**, see Completion Notes
-  - [x] Author `.github/workflows/ci.yml` (lint, typecheck, build on PR/push) — ready to run once the repo is pushed to GitHub
-  - [ ] Connect the repository to Vercel; confirm PR-triggered preview deployments build successfully
-  - [ ] Wire Neon's Vercel integration (or equivalent CI step) so each PR provisions an ephemeral Neon branch (schema+data fork of primary) and injects its connection string into that PR's preview env
-  - [ ] Confirm the ephemeral Neon branch is torn down automatically when the PR is merged or closed
-- [ ] Task 8: Production deployment (AC: #8) — **BLOCKED: needs user's Vercel account**, see Completion Notes
-  - [ ] Deploy `main` to Vercel production, wired to the Neon primary branch
-  - [ ] Confirm the production URL is reachable and serves the scaffolded app with no build errors
+- [ ] Task 7: CI + Vercel preview pipeline with Neon branching (AC: #6, #7) — **PARTIAL, see Completion Notes** (AC #6 satisfied; AC #7's teardown half is an accepted known gap, not pursued further per Ahmed's decision)
+  - [x] Author `.github/workflows/ci.yml` (lint, typecheck, build on PR/push) — confirmed green on GitHub Actions after `DATABASE_URL`/`BETTER_AUTH_SECRET` secrets were added
+  - [x] Connect the repository to Vercel; confirm PR-triggered preview deployments build successfully — verified via test PR #1: GitHub status check `Vercel: success`, preview deployment reachable (behind Vercel's default deployment-protection SSO redirect, which is expected)
+  - [x] Wire Neon's Vercel integration so each PR provisions an ephemeral Neon branch — confirmed: a new branch appeared in the Neon console tied to PR #1
+  - [ ] Confirm the ephemeral Neon branch is torn down automatically when the PR is merged or closed — **NOT confirmed**: closing PR #1 and deleting its git branch left the Neon branch listed (compute went idle/suspended, but the branch record was not deleted). This looks like a Neon↔Vercel integration configuration/product-behavior question, not a defect in this repo's code — Ahmed chose not to pursue it further this session (declined the alternative of an explicit Neon-API-based CI teardown step). Revisit if this matters before real PRs start touching schema.
+- [x] Task 8: Production deployment (AC: #8)
+  - [x] Deploy `main` to Vercel production, wired to the Neon primary branch — live at https://sanabel-six.vercel.app
+  - [x] Confirm the production URL is reachable and serves the scaffolded app with no build errors — verified `/en`, `/ar`, and `/api/auth/get-session` all return 200 against the real Neon primary branch
+
+### Review Findings
+
+- [x] [Review][Patch] `.env.example` is gitignored and was never committed — a fresh clone is missing the exact file README's onboarding instructions tell you to copy [.gitignore:34] — fixed: added `!.env.example` negation to `.gitignore`
+- [x] [Review][Patch] `components.json` has `"rtl": false`, contradicting the project's full-RTL bilingual requirement — future shadcn-generated components will use physical instead of logical CSS properties [components.json:14] — fixed: flipped to `true`
+- [x] [Review][Patch] `session`/`account` tables' `updatedAt` column has `.$onUpdate()` but no `.defaultNow()` (unlike `user`/`verification`), so a direct insert omitting `updatedAt` violates a NOT NULL constraint with no DB-level default [lib/modules/accounts/schema.ts:24-26,53-55] — fixed: added `.defaultNow()`, generated migration `drizzle/0001_lowly_hemingway.sql`, applied and verified against the live Neon DB (`column_default: 'now()'` confirmed for both columns)
+- [x] [Review][Patch] Marketing placeholder page hardcodes "Primary"/"Secondary"/"Accent" as literal English strings instead of routing through the i18n catalog, violating the Dev Notes' AD-9 rule in the very page meant to prove i18n+tokens work end-to-end [app/[locale]/(marketing)/page.tsx:25,28,31] — fixed: added `primaryColor`/`secondaryColor`/`accentColor` keys to `en.json`/`ar.json`, page now uses `t()`; verified rendering correctly in both locales
+- [x] [Review][Patch] `shadcn` package sits in `dependencies` instead of `devDependencies` — it's a build-time-only tool/CSS source, not a runtime dependency [package.json:27] — fixed: moved to `devDependencies`, `package-lock.json` resynced
+- [x] [Review][Patch] The three placeholder route-group pages don't call `setRequestLocale()` like the marketing page does — harmless today (no next-intl hooks used yet) but inconsistent with the pattern one file over [app/[locale]/(admin)/moderation/page.tsx, app/[locale]/(instructor)/courses/page.tsx, app/[locale]/(learner)/my-learning/page.tsx] — fixed: all three now call `setRequestLocale()`
+- [x] [Review][Patch] `README.md`'s Deployment section still reads "This repo isn't connected to GitHub/Vercel/Neon yet," even though this session completed all of it (CI green, production live, preview+Neon branch creation verified) — stale for the next reader [README.md:33] — fixed: rewrote to reflect the deployed state, links, and the disclosed Neon-teardown gap
+- [x] [Review][Defer] Better Auth's generated `user` schema uses a case-sensitive unique constraint on `email`, allowing duplicate accounts differing only in casing — real, but sign-up/sign-in flows are explicitly out of scope for this story (Story 1.1's concern) [lib/modules/accounts/schema.ts:7] — deferred, pre-existing scope boundary (Task 3 explicitly limits this story to config wiring, not auth-flow correctness)
+- [x] [Review][Defer] `socialProviders.google`/`.github` are always registered with `?? ""` fallback creds rather than omitted when unset, so an attempted social sign-in with no real credentials configured would fail unpredictably rather than being cleanly unavailable [lib/auth/config.ts:20-29] — deferred, sanctioned by this story's own Dev Notes ("credentials may be placeholder/dev values at this stage")
+- [x] [Review][Defer] `.github/workflows/ci.yml` injects `DATABASE_URL`/`BETTER_AUTH_SECRET`/OAuth secrets as plain env vars into the `npm run build` step with no isolation from third-party code run during `npm ci` [.github/workflows/ci.yml] — deferred, generic CI supply-chain risk category, not specific to this scaffold and out of scope for a foundation story
+- [x] [Review][Defer] Repo is public, so PRs from forks won't receive the GitHub Actions secrets by default and their CI runs will fail on `npm run build` [.github/workflows/ci.yml] — deferred, zero current impact for a solo-maintained repo not yet accepting external contributions
+- [x] [Review][Defer] `proxy.ts`'s middleware matcher excludes any path merely prefixed with `api`/`trpc`/`_next`/`_vercel` (e.g. a hypothetical `/api-docs` route) rather than requiring an exact path segment [proxy.ts:7] — deferred, zero current impact since no such conflicting routes exist yet
 
 ## Dev Notes
 
@@ -156,43 +171,48 @@ Claude Sonnet 5 (claude-sonnet-5)
 ### Completion Notes List
 
 - Tasks 1–6 are fully implemented and verified: `npm run build`, `npx tsc --noEmit`, and `npm run lint` all pass clean; both locales statically prerender; light/dark tokens confirmed in compiled CSS.
-- Task 2 confirmed end-to-end against a real Neon Postgres 17 project (Ahmed created it and set the real `DATABASE_URL` in `.env.local`): `npm run db:migrate` applied the initial migration successfully, and a live query confirmed all 4 tables (`user`/`session`/`account`/`verification`) exist. Also re-verified the dev server against this real DB — `/en` and `/api/auth/get-session` both return 200.
-- **Blocked — two items still need Ahmed's action, since they require his GitHub/Vercel accounts:**
-  1. **Task 7** (CI + Vercel/Neon preview branching): `.github/workflows/ci.yml` is authored and will run automatically once this repo is pushed to GitHub (repo created at github.com/Ahmed-Mahmoud0/sanabel). Connecting the repo to Vercel and adding the Neon Vercel integration both happen in web dashboards under Ahmed's own accounts — see the "Deployment" section in `README.md` for the exact steps.
-  2. **Task 8** (production deploy): same constraint — deploying `main` to Vercel production requires Ahmed's Vercel account.
-- No git commits were made yet (repo was `git init`'d locally only, per the "only commit when asked" rule); the GitHub repo (github.com/Ahmed-Mahmoud0/sanabel) exists but nothing has been pushed to it yet — awaiting Ahmed's explicit go-ahead to commit and push.
-- Story Status is left as `in-progress` rather than `review` per Step 9's HALT condition (incomplete tasks) — one more pass needed once Tasks 7–8 are resolved.
+- Task 2 confirmed end-to-end against a real Neon Postgres 17 project (Ahmed provisioned it, set the real `DATABASE_URL` in `.env.local`): `npm run db:migrate` applied the initial migration successfully, and a live query confirmed all 4 tables (`user`/`session`/`account`/`verification`) exist.
+- Repo pushed to github.com/Ahmed-Mahmoud0/sanabel (Ahmed confirmed the commit/push each time). First GitHub Actions run failed on `npm run build` — root-caused to `DATABASE_URL` not yet set as a repo secret (our Drizzle client throws at module-eval time if it's absent, and the auth Route Handler pulls it in transitively). After Ahmed added the secret, a re-triggered run went green: https://github.com/Ahmed-Mahmoud0/sanabel/actions/runs/30816473635.
+- Production deploy hit the equivalent problem one layer down: Vercel's first deploy built fine but every request 500'd. Reproduced locally by unsetting env vars — `BETTER_AUTH_SECRET` missing doesn't fail the build, but throws `BetterAuthError` on every request at runtime. After Ahmed added `BETTER_AUTH_SECRET`/`BETTER_AUTH_URL`/`DATABASE_URL` in Vercel's env vars and redeployed, `/en`, `/ar`, and `/api/auth/get-session` all confirmed 200 at https://sanabel-six.vercel.app.
+- Verified the Vercel preview + Neon branch pipeline (AC #6/#7) with a real test PR (#1, branch `test/preview-pipeline`, since deleted): GitHub's `Vercel` status check reported success and a preview deployment was created (confirmed via the Vercel bot's PR comment and a live URL, gated behind Vercel's default deployment-protection SSO — expected, not a bug). Ahmed confirmed a new Neon branch appeared tied to the PR, satisfying AC #6/#7's creation half.
+- **AC #7's teardown half is an open gap, not resolved this session.** After closing PR #1 and deleting its git branch, the Neon branch remained listed (compute went idle/suspended, but wasn't deleted). This looks like a Neon↔Vercel integration configuration or product-behavior question rather than a defect in this repo — I offered to add a deterministic GitHub Actions step calling Neon's API to delete the branch on `pull_request: closed` as a fallback (the story's Dev Notes explicitly allow "Neon's Vercel integration **or equivalent CI step**"), but Ahmed chose to defer this rather than pursue it further right now. Flagging for a future story/session before real PRs start touching schema and stale branches accumulate.
+- Story Status was set to `review`, then a 3-layer adversarial code review (Blind Hunter, Edge Case Hunter, Acceptance Auditor) ran against the diff. Every subagent finding was independently re-verified by reading the actual current files before rating — this caught at least one outright false positive (a claim that `shadcn/tailwind.css` doesn't resolve, disproven by checking `node_modules/shadcn/package.json`'s exports map) and one inaccurate code quote (Edge Case Hunter's `lib/auth/config.ts` snippet didn't match the real file, though its underlying concern was still valid against the real code).
+- 7 patch findings were fixed and verified (see Review Findings section and File List above), including one that reached the live Neon database (`session`/`account.updatedAt` DB-level default, applied via `drizzle/0001_lowly_hemingway.sql` and confirmed with a live `information_schema.columns` query). Full regression (`npm run build`, `npx tsc --noEmit`, `npm run lint`) is clean after all fixes, and the i18n catalog fix was verified rendering correctly in both `/en` and `/ar`.
+- Status is now `done`. Task 7's teardown-verification subtask remains the one open, explicitly-accepted gap (not a code defect — see that task's note) — everything else is resolved, fixed, or deliberately deferred with a documented reason in `deferred-work.md`.
 
 ### File List
 
-- `package.json`, `package-lock.json` — deps: next, react, react-dom, drizzle-orm, @neondatabase/serverless, drizzle-kit, better-auth, next-intl, uuid, dotenv, shadcn/Tailwind toolchain; added `db:generate`/`db:migrate`/`db:studio` scripts
+- `package.json`, `package-lock.json` — deps: next, react, react-dom, drizzle-orm, @neondatabase/serverless, drizzle-kit, better-auth, next-intl, uuid, dotenv, shadcn/Tailwind toolchain; added `db:generate`/`db:migrate`/`db:studio` scripts; code-review fix: moved `shadcn` to `devDependencies`
 - `next.config.ts` — wrapped with `next-intl/plugin`
 - `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs` — create-next-app defaults (unmodified beyond scaffold)
-- `components.json` — shadcn/ui config
+- `components.json` — shadcn/ui config; code-review fix: `rtl` flipped to `true`
 - `components/ui/button.tsx`, `lib/utils.ts` — shadcn/ui base primitive + helper
 - `proxy.ts` — next-intl locale-routing middleware (renamed from `middleware.ts` per Next 16.2 convention)
 - `drizzle.config.ts` — Drizzle Kit config, loads `.env.local`
 - `drizzle/0000_lyrical_random.sql`, `drizzle/meta/0000_snapshot.json`, `drizzle/meta/_journal.json` — initial migration (Better Auth's user/session/account/verification tables)
+- `drizzle/0001_lowly_hemingway.sql`, `drizzle/meta/0001_snapshot.json` — code-review fix: `session`/`account.updated_at` DB-level default
 - `lib/db/client.ts` — Drizzle Neon HTTP client
 - `lib/db/schema.ts` — schema barrel, re-exports `lib/modules/accounts/schema.ts`
 - `lib/db/id.ts` — UUIDv7 `generateId()` helper (Consistency Conventions)
-- `lib/modules/accounts/schema.ts` — Better Auth's Drizzle schema (user/session/account/verification), generated via `@better-auth/cli`
+- `lib/modules/accounts/schema.ts` — Better Auth's Drizzle schema (user/session/account/verification), generated via `@better-auth/cli`; code-review fix: added `.defaultNow()` to `session`/`account.updatedAt`
 - `lib/modules/{course-authoring,learning-experience,certificates,discussion,ratings,moderation,code-execution}/index.ts` — empty module stubs
 - `lib/auth/config.ts` — Better Auth server config (Drizzle adapter, DB-backed sessions, email/password + Google/GitHub OAuth, UUIDv7 id generation)
 - `lib/auth/client.ts` — Better Auth React client
 - `app/api/auth/[...all]/route.ts` — Better Auth Next.js route handler
 - `lib/i18n/routing.ts`, `lib/i18n/navigation.ts`, `lib/i18n/request.ts` — next-intl config
-- `lib/i18n/en.json`, `lib/i18n/ar.json` — message catalogs
+- `lib/i18n/en.json`, `lib/i18n/ar.json` — message catalogs; code-review fix: added `primaryColor`/`secondaryColor`/`accentColor` keys
 - `app/[locale]/layout.tsx` — root layout: locale validation, `lang`/`dir` switching, Inter/IBM Plex Sans Arabic/JetBrains Mono fonts, `NextIntlClientProvider`
-- `app/[locale]/(marketing)/page.tsx` — placeholder home page proving i18n + design tokens end-to-end
-- `app/[locale]/(learner)/my-learning/page.tsx`, `app/[locale]/(instructor)/courses/page.tsx`, `app/[locale]/(admin)/moderation/page.tsx` — placeholder route-group pages
+- `app/[locale]/(marketing)/page.tsx` — placeholder home page proving i18n + design tokens end-to-end; code-review fix: color labels now go through `t()` instead of being hardcoded
+- `app/[locale]/(learner)/my-learning/page.tsx`, `app/[locale]/(instructor)/courses/page.tsx`, `app/[locale]/(admin)/moderation/page.tsx` — placeholder route-group pages; code-review fix: all three now call `setRequestLocale()`
 - `app/globals.css` — DESIGN.md tokens (colors, typography, radius, spacing) wired into Tailwind v4 `@theme`, with light/dark via `prefers-color-scheme` + `.dark`/`.light` override classes
 - `emails/index.ts` — stub dir for future React Email templates
-- `.env.example` — documented required env vars
-- `.env.local` — local placeholder values (gitignored, not committed)
+- `.env.example` — documented required env vars; code-review fix: now actually committed (`.gitignore`'s `.env*` was swallowing it)
+- `.env.local` — local values incl. real Neon `DATABASE_URL` (gitignored, not committed)
+- `.gitignore` — code-review fix: added `!.env.example` negation
 - `.github/workflows/ci.yml` — CI: lint, typecheck, build on PR/push
-- `README.md` — replaced create-next-app boilerplate with real setup + deployment instructions
-- `.git/` — repo initialized locally (`git init`, `main` branch), no commits made
+- `README.md` — replaced create-next-app boilerplate with real setup + deployment instructions; code-review fix: Deployment section rewritten to reflect the actually-deployed state
+- `_bmad-output/implementation-artifacts/deferred-work.md` — new file: 5 deferred findings from this story's code review
+- `.git/` — pushed to github.com/Ahmed-Mahmoud0/sanabel (`main` branch)
 
 ## Change Log
 
@@ -200,3 +220,5 @@ Claude Sonnet 5 (claude-sonnet-5)
 | --- | --- |
 | 2026-08-03 | Tasks 1–6 implemented and verified (Next.js 16 scaffold, Drizzle+Neon config, Better Auth, next-intl, DESIGN.md tokens, module directories). Tasks 7–8 blocked pending Ahmed's GitHub/Vercel/Neon account setup — see Completion Notes. |
 | 2026-08-03 | Task 2 fully verified: Ahmed provisioned a real Neon project, migration applied successfully, tables confirmed live. GitHub repo created (github.com/Ahmed-Mahmoud0/sanabel), not yet pushed. |
+| 2026-08-03 | Pushed to GitHub; fixed CI and production 500s (both traced to missing `DATABASE_URL`/`BETTER_AUTH_SECRET` env vars, not code bugs). Verified Vercel preview + Neon branch creation via a real test PR. Production confirmed live at sanabel-six.vercel.app. Neon branch auto-teardown on PR close/merge not confirmed working — accepted as an open gap per Ahmed's decision; story moved to review. |
+| 2026-08-03 | Code review (3-layer adversarial): 7 patch findings applied and verified (`.env.example` un-gitignored, RTL flag fixed, `updatedAt` DB defaults fixed on live Neon DB, i18n catalog violation fixed, `shadcn` moved to devDependencies, missing `setRequestLocale()` added, stale README rewritten), 5 deferred to `deferred-work.md`, 5 dismissed as false positives/non-issues. Full regression (build/typecheck/lint) clean after fixes. Story moved to `done`. |

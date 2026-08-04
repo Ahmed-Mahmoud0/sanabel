@@ -22,13 +22,13 @@ function HomeContent() {
       <p className="text-label text-text-disabled">{t("localeLabel")}</p>
       <div className="flex gap-3">
         <span className="rounded-md bg-primary px-4 py-2 text-body-sm text-primary-foreground">
-          Primary
+          {t("primaryColor")}
         </span>
         <span className="rounded-md bg-secondary px-4 py-2 text-body-sm text-secondary-foreground">
-          Secondary
+          {t("secondaryColor")}
         </span>
         <span className="rounded-md bg-accent px-4 py-2 text-body-sm text-accent-foreground">
-          Accent
+          {t("accentColor")}
         </span>
       </div>
     </main>

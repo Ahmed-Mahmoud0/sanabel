@@ -2,6 +2,9 @@
   "Scaffold": {
     "title": "Sanabel",
     "description": "Project scaffold is wired up.",
-    "localeLabel": "Current locale: English"
+    "localeLabel": "Current locale: English",
+    "primaryColor": "Primary",
+    "secondaryColor": "Secondary",
+    "accentColor": "Accent"
   }
 }

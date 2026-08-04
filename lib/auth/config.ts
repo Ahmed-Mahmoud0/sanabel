@@ -3,6 +3,8 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/lib/db/client";
 import * as schema from "@/lib/db/schema";
 import { generateId } from "@/lib/db/id";
+import { getLocaleFromRequest } from "@/lib/auth/locale";
+import { sendResetPasswordEmail, sendVerificationEmail } from "@/lib/auth/send-email";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -16,6 +18,16 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, url }, request) => {
+      await sendResetPasswordEmail(user.email, url, getLocaleFromRequest(request));
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    sendVerificationEmail: async ({ user, url }, request) => {
+      await sendVerificationEmail(user.email, url, getLocaleFromRequest(request));
+    },
   },
   socialProviders: {
     google: {

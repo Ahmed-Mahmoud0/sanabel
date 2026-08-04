@@ -18,7 +18,7 @@ Open [http://localhost:3000/en](http://localhost:3000/en) or [http://localhost:3
 
 ### Environment variables
 
-See `.env.example`. `DATABASE_URL` must point at a real Postgres 17 instance (a free [Neon](https://neon.tech) project works) before `npm run db:migrate` will succeed. `BETTER_AUTH_SECRET` should be a random 32+ char string (`openssl rand -base64 32`). The Google/GitHub OAuth vars can stay blank in local dev — email/password auth still works without them.
+See `.env.example`. `DATABASE_URL` must point at a real Postgres 17 instance (a free [Neon](https://neon.tech) project works) before `npm run db:migrate` will succeed. `BETTER_AUTH_SECRET` should be a random 32+ char string (`openssl rand -base64 32`). The Google/GitHub OAuth vars can stay blank in local dev — email/password auth still works without them. `RESEND_API_KEY` is required for verification/password-reset emails to send — get a free key at [resend.com](https://resend.com); `EMAIL_FROM` can stay at the Resend sandbox sender (`onboarding@resend.dev`) until a custom domain is verified.
 
 ### Database
 

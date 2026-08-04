@@ -6,5 +6,78 @@
     "primaryColor": "Primary",
     "secondaryColor": "Secondary",
     "accentColor": "Accent"
+  },
+  "Auth": {
+    "signUp": {
+      "title": "Create your account",
+      "subtitle": "Start learning to code, free.",
+      "nameLabel": "Display name",
+      "namePlaceholder": "e.g. Ahmed",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "At least 8 characters",
+      "submit": "Create account",
+      "submitting": "Creating account…",
+      "haveAccount": "Already have an account?",
+      "signInLink": "Sign in",
+      "duplicateEmailError": "An account with this email already exists.",
+      "genericError": "Something went wrong. Please try again."
+    },
+    "signIn": {
+      "title": "Sign in",
+      "subtitle": "Welcome back to Sanabel.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Your password",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "forgotPassword": "Forgot password?",
+      "noAccount": "Don't have an account?",
+      "signUpLink": "Sign up",
+      "invalidCredentialsError": "Incorrect email or password.",
+      "genericError": "Something went wrong. Please try again."
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "subtitle": "Enter your email and we'll send you a reset link.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send reset link",
+      "submitting": "Sending…",
+      "success": "If an account exists for that email, a reset link is on its way.",
+      "backToSignIn": "Back to sign in",
+      "genericError": "Something went wrong. Please try again."
+    },
+    "resetPassword": {
+      "title": "Choose a new password",
+      "passwordLabel": "New password",
+      "passwordPlaceholder": "At least 8 characters",
+      "submit": "Reset password",
+      "submitting": "Resetting…",
+      "success": "Your password has been reset.",
+      "signInLink": "Sign in",
+      "invalidTokenError": "This reset link is invalid or has expired.",
+      "genericError": "Something went wrong. Please try again."
+    },
+    "emails": {
+      "verify": {
+        "subject": "Verify your email address",
+        "preview": "Confirm your email to finish setting up your Sanabel account.",
+        "heading": "Verify your email",
+        "body": "Thanks for signing up for Sanabel! Click the button below to verify your email address.",
+        "button": "Verify email",
+        "ignore": "If you didn't create a Sanabel account, you can safely ignore this email."
+      },
+      "reset": {
+        "subject": "Reset your password",
+        "preview": "Reset your Sanabel account password.",
+        "heading": "Reset your password",
+        "body": "We received a request to reset your Sanabel password. Click the button below to choose a new one.",
+        "button": "Reset password",
+        "ignore": "If you didn't request a password reset, you can safely ignore this email."
+      }
+    }
   }
 }

@@ -15,6 +15,13 @@
       "when": 1785836215436,
       "tag": "0001_lowly_hemingway",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785842308988,
+      "tag": "0002_wide_white_queen",
+      "breakpoints": true
     }
   ]
 }

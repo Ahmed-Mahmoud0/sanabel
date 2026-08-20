@@ -39,6 +39,14 @@
       "invalidCredentialsError": "Incorrect email or password.",
       "genericError": "Something went wrong. Please try again."
     },
+    "social": {
+      "or": "or",
+      "continueWithGoogle": "Continue with Google",
+      "continueWithGithub": "Continue with GitHub",
+      "accountNotLinkedError": "This email already has an account. Sign in with your password, or verify that account's email first, then try again.",
+      "signInLink": "Sign in",
+      "genericError": "Something went wrong. Please try again."
+    },
     "forgotPassword": {
       "title": "Reset your password",
       "subtitle": "Enter your email and we'll send you a reset link.",

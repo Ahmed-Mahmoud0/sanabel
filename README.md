@@ -20,6 +20,16 @@ Open [http://localhost:3000/en](http://localhost:3000/en) or [http://localhost:3
 
 See `.env.example`. `DATABASE_URL` must point at a real Postgres 17 instance (a free [Neon](https://neon.tech) project works) before `npm run db:migrate` will succeed. `BETTER_AUTH_SECRET` should be a random 32+ char string (`openssl rand -base64 32`). The Google/GitHub OAuth vars can stay blank in local dev — email/password auth still works without them. `RESEND_API_KEY` is required for verification/password-reset emails to send — get a free key at [resend.com](https://resend.com); `EMAIL_FROM` can stay at the Resend sandbox sender (`onboarding@resend.dev`) until a custom domain is verified.
 
+#### Social login (Google & GitHub)
+
+Optional for local dev — sign-up/sign-in still work with email/password if these are left blank. To enable "Continue with Google" / "Continue with GitHub":
+
+1. **Google:** create an OAuth 2.0 Client ID at [Google Cloud Console](https://console.cloud.google.com/apis/credentials) (Application type: Web application). Add an Authorized redirect URI of `{BETTER_AUTH_URL}/api/auth/callback/google` — e.g. `http://localhost:3000/api/auth/callback/google` for local dev, plus the production URL's equivalent. Set `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
+2. **GitHub:** create an OAuth App at [GitHub Developer Settings](https://github.com/settings/developers). Set its "Authorization callback URL" to `{BETTER_AUTH_URL}/api/auth/callback/github`. Set `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`.
+3. Set the same four values in Vercel's project environment variables (Production, and Preview if you want social login to work there too) and in GitHub Actions secrets if CI needs them.
+
+**Known gap:** Vercel preview URLs are per-deploy and dynamic, so they can't be pre-registered as OAuth redirect URIs — social login realistically only works on `localhost` and the production URL, not on PR previews.
+
 ### Database
 
 ```bash

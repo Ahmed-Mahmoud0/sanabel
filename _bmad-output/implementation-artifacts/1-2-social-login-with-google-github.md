@@ -4,7 +4,7 @@ baseline_commit: 683209258a289b910cfae15fcac706459292b489
 
 # Story 1.2: Social Login with Google & GitHub
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -133,4 +133,4 @@ Claude Sonnet 5
 | 2026-08-20 | Found and fixed an unrelated production bug: `BETTER_AUTH_URL` was set to `localhost` in Vercel, causing password-reset/OAuth base URLs to resolve incorrectly in production. Fixed via Vercel env var update + redeploy — not a code change. |
 | 2026-08-20 | Task 6 AC #1–#3 verified by Ahmed directly against production; AC #4 structurally verified. Full regression re-run clean. Story moved to `review`. |
 | 2026-08-20 | Code review (8-angle diff review): 6 findings confirmed, 2 refuted. 3 correctness findings patched (unhandled `signIn.social()` errors, no pending/disabled state on social buttons, dead-end "Sign in" link in the `account_not_linked` message when already on `/sign-in`); 3 cleanup/altitude findings deferred (see Review Findings). Build/tsc/lint clean after fixes. |
-| 2026-08-20 | Task 6 AC #1–#3 verified by Ahmed directly against production; AC #4 structurally verified. Full regression re-run clean. Story moved to `review`. |
+| 2026-08-20 | Story marked `done`. |

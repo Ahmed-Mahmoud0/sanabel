@@ -53,8 +53,8 @@ development_status:
   1-1-email-password-sign-up-sign-in: done
   1-2-social-login-with-google-github: done
   1-3-role-model-role-gated-navigation: done
-  1-4-admin-grants-and-revokes-instructor-role: review
-  1-5-profile-basics: backlog
+  1-4-admin-grants-and-revokes-instructor-role: done
+  1-5-profile-basics: ready-for-dev
   1-6-bilingual-ui-shell-language-switcher: backlog
   epic-1-retrospective: optional
 

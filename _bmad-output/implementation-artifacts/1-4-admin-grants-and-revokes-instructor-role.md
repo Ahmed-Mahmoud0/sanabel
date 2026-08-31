@@ -4,7 +4,7 @@ baseline_commit: 163971114e02031d514e34af4afb8eabfc20de74
 
 # Story 1.4: Admin Grants and Revokes Instructor Role
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 

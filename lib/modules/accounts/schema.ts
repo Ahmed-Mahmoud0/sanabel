@@ -9,6 +9,13 @@ export const user = pgTable(
     email: text("email").notNull().unique(),
     emailVerified: boolean("email_verified").default(false).notNull(),
     image: text("image"),
+    // Additive role flags (AD-6): independent booleans on the one Account row,
+    // never separate entities. Admin does NOT imply Instructor — both are
+    // checked independently. Client-writable input is blocked in
+    // lib/auth/config.ts via `input: false`; these are only ever set
+    // server-side (Story 1.4 grant/revoke UI, or the ADMIN_EMAIL bootstrap).
+    isInstructor: boolean("is_instructor").default(false).notNull(),
+    isAdmin: boolean("is_admin").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

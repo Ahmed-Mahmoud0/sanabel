@@ -7,6 +7,16 @@
     "secondaryColor": "Secondary",
     "accentColor": "Accent"
   },
+  "Nav": {
+    "primaryLabel": "Primary navigation",
+    "brand": "Sanabel",
+    "myLearning": "My Learning",
+    "myCourses": "My Courses",
+    "moderation": "Admin moderation",
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "signOut": "Sign out"
+  },
   "Auth": {
     "signUp": {
       "title": "Create your account",

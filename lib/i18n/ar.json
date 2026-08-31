@@ -7,6 +7,16 @@
     "secondaryColor": "ثانوي",
     "accentColor": "مميز"
   },
+  "Nav": {
+    "primaryLabel": "التنقل الرئيسي",
+    "brand": "سنابل",
+    "myLearning": "تعلُّمي",
+    "myCourses": "دوراتي",
+    "moderation": "الإشراف الإداري",
+    "signIn": "تسجيل الدخول",
+    "signUp": "إنشاء حساب",
+    "signOut": "تسجيل الخروج"
+  },
   "Auth": {
     "signUp": {
       "title": "أنشئ حسابك",

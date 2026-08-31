@@ -30,6 +30,14 @@ Optional for local dev — sign-up/sign-in still work with email/password if the
 
 **Known gap:** Vercel preview URLs are per-deploy and dynamic, so they can't be pre-registered as OAuth redirect URIs — social login realistically only works on `localhost` and the production URL, not on PR previews.
 
+#### Roles & the Admin bootstrap
+
+Every account holds the **Learner** role by default. **Instructor** and **Admin** are additive boolean flags on the account, only ever set server-side (there is no self-service "request a role" flow by design).
+
+`ADMIN_EMAIL` bootstraps the first Admin: any account created (email/password **or** social) whose email matches `ADMIN_EMAIL` (case-insensitively) is marked Admin on sign-up. This runs on every future sign-up and is idempotent.
+
+**One-time manual step for pre-existing accounts:** the bootstrap only fires on account *creation*, so accounts that existed before `ADMIN_EMAIL` was set (e.g. Ahmed's own accounts from earlier manual testing) are not caught retroactively. Flip their `is_admin` column to `true` once via `npm run db:studio`. Set `ADMIN_EMAIL` in local `.env.local`, Vercel project env vars (Production), and GitHub Actions secrets if CI needs it.
+
 ### Database
 
 ```bash

@@ -97,5 +97,27 @@
         "ignore": "If you didn't request a password reset, you can safely ignore this email."
       }
     }
+  },
+  "Admin": {
+    "accounts": {
+      "title": "Accounts",
+      "subtitle": "Grant or revoke the Instructor role. Changes take effect on the account's next request.",
+      "searchLabel": "Search accounts",
+      "searchPlaceholder": "Search by name or email",
+      "searchSubmit": "Search",
+      "roleLearner": "Learner",
+      "roleInstructor": "Instructor",
+      "roleAdmin": "Admin",
+      "grant": "Grant Instructor",
+      "revoke": "Revoke Instructor",
+      "grantAria": "Grant Instructor role to {email}",
+      "revokeAria": "Revoke Instructor role from {email}",
+      "pending": "Working…",
+      "empty": "No accounts yet.",
+      "noResults": "No accounts match “{query}”.",
+      "errorForbidden": "You don’t have permission to change roles.",
+      "errorNotFound": "That account no longer exists.",
+      "errorGeneric": "Something went wrong. Please try again."
+    }
   }
 }

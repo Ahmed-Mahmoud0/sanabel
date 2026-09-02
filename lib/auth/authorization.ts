@@ -72,6 +72,26 @@ export function hasRole(user: SessionUser | null, role: Role): user is SessionUs
 }
 
 /**
+ * Resource-ownership check — the first move beyond pure role flags toward
+ * AD-6's `can(action, resource)` framing. Story 1.3 reserved exactly this
+ * extension point: a resource-scoped check belongs in THIS module, not a second
+ * helper file or an inline `resource.ownerId === user.id` duplicated per page.
+ *
+ * Pure and synchronous — pass an already-loaded session user and the resource
+ * owner's id. Returns `false` for a signed-out user. Callers pair it with a
+ * role check (e.g. `can("instructor")` on the layout) and then narrow to the
+ * one owner; Epic 2+ ownership checks (Module/Lesson editing, analytics) reuse
+ * this rather than re-deriving equality.
+ */
+export function isOwner(
+  user: SessionUser | null,
+  resourceOwnerId: string,
+): user is SessionUser {
+  if (!user) return false;
+  return user.id === resourceOwnerId;
+}
+
+/**
  * Boolean role check — never throws. Returns `false` for a signed-out user or
  * one missing the role.
  */

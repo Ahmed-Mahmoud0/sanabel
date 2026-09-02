@@ -16,7 +16,21 @@
     "profile": "الملف الشخصي",
     "signIn": "تسجيل الدخول",
     "signUp": "إنشاء حساب",
-    "signOut": "تسجيل الخروج"
+    "signOut": "تسجيل الخروج",
+    "language": {
+      "groupLabel": "اللغة",
+      "en": "الإنجليزية",
+      "ar": "العربية",
+      "current": "اللغة الحالية: {language}",
+      "switchTo": "التبديل إلى {language}"
+    },
+    "theme": {
+      "system": "النظام",
+      "light": "فاتح",
+      "dark": "داكن",
+      "current": "المظهر: {theme}",
+      "switchTo": "التبديل إلى المظهر {theme}"
+    }
   },
   "Auth": {
     "signUp": {

@@ -50,7 +50,7 @@ export default async function AdminAccountsPage({
             defaultValue={query}
           />
         </div>
-        <Button type="submit" variant="outline" size="sm">
+        <Button type="submit" variant="outline">
           {t("searchSubmit")}
         </Button>
       </form>

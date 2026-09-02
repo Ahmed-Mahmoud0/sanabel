@@ -3,6 +3,10 @@
 import { Suspense, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/lib/i18n/navigation";
+import {
+  clearLocaleSwitchFormState,
+  useLocaleSwitchFormState,
+} from "@/lib/i18n/locale-switch-form-state";
 import { authClient } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/auth/field";
@@ -20,6 +24,13 @@ export function SignUpForm() {
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<{ duplicate: boolean; message: string } | null>(null);
+
+  // Keep the non-sensitive fields across a language switch (AC #2). Password
+  // is intentionally excluded — never mirrored to storage.
+  useLocaleSwitchFormState("form:sign-up", {
+    name: { value: name, set: setName },
+    email: { value: email, set: setEmail },
+  });
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,6 +54,7 @@ export function SignUpForm() {
         return;
       }
 
+      clearLocaleSwitchFormState("form:sign-up");
       router.push("/my-learning");
       router.refresh();
     } catch {

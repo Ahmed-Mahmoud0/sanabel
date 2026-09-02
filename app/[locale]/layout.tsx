@@ -4,6 +4,7 @@ import { hasLocale } from "next-intl";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { ThemeProvider } from "next-themes";
 import { routing } from "@/lib/i18n/routing";
 import { SiteHeader } from "@/components/nav/site-header";
 import "../globals.css";
@@ -57,10 +58,24 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <NextIntlClientProvider messages={messages}>
-          <SiteHeader />
-          {children}
-        </NextIntlClientProvider>
+        {/* Finishes Story 1.0's deferred theme switcher (AC #6). `next-themes`
+            adds the `.dark` / `.light` class to <html> before first paint via
+            its own inline script (no flash), follows `prefers-color-scheme`
+            until the user picks a theme, and persists the manual choice to
+            `localStorage` under the "theme" key — a device preference, never
+            account data. The token pairs and both override classes already
+            live in `app/globals.css` (Story 1.0). */}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <NextIntlClientProvider messages={messages}>
+            <SiteHeader />
+            {children}
+          </NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/lib/i18n/navigation";
+import {
+  clearLocaleSwitchFormState,
+  useLocaleSwitchFormState,
+} from "@/lib/i18n/locale-switch-form-state";
 import { authClient } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -35,6 +39,21 @@ export function ProfileForm({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Baseline the persistence hook diffs against. It advances the instant a save
+  // succeeds — not when `router.refresh()` finally re-delivers the props — so
+  // the mirror stops writing (and drops the draft) immediately rather than
+  // racing the refresh.
+  const [savedName, setSavedName] = useState(initialName);
+  const [savedBio, setSavedBio] = useState(initialBio);
+
+  // The authenticated form AC #2 calls out by name: an in-progress edit to the
+  // display name or bio must survive a language switch. Only values that differ
+  // from what's saved are mirrored; the draft is dropped on a successful save.
+  useLocaleSwitchFormState("form:profile", {
+    name: { value: name, set: setName, initial: savedName },
+    bio: { value: bio, set: setBio, initial: savedBio },
+  });
 
   const trimmedName = name.trim();
   const nextBio = bio.trim();
@@ -81,6 +100,9 @@ export function ProfileForm({
 
       setName(trimmedName);
       setBio(nextBio);
+      setSavedName(trimmedName);
+      setSavedBio(nextBio);
+      clearLocaleSwitchFormState("form:profile");
       setSuccess(true);
       // Re-fetch Server Components (site header, this page's own session read)
       // so the new values show immediately — same pattern as sign-in-form.tsx.

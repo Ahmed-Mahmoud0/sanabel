@@ -16,7 +16,21 @@
     "profile": "Profile",
     "signIn": "Sign in",
     "signUp": "Sign up",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "language": {
+      "groupLabel": "Language",
+      "en": "English",
+      "ar": "Arabic",
+      "current": "Current language: {language}",
+      "switchTo": "Switch to {language}"
+    },
+    "theme": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark",
+      "current": "Theme: {theme}",
+      "switchTo": "Switch to {theme} theme"
+    }
   },
   "Auth": {
     "signUp": {

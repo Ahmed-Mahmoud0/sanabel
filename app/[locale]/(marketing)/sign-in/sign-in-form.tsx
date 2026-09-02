@@ -3,6 +3,10 @@
 import { Suspense, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/lib/i18n/navigation";
+import {
+  clearLocaleSwitchFormState,
+  useLocaleSwitchFormState,
+} from "@/lib/i18n/locale-switch-form-state";
 import { authClient } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/auth/field";
@@ -18,6 +22,11 @@ export function SignInForm() {
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Preserve the email across a language switch (AC #2); never the password.
+  useLocaleSwitchFormState("form:sign-in", {
+    email: { value: email, set: setEmail },
+  });
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,6 +44,7 @@ export function SignInForm() {
         return;
       }
 
+      clearLocaleSwitchFormState("form:sign-in");
       router.push("/my-learning");
       router.refresh();
     } catch {
@@ -77,7 +87,7 @@ export function SignInForm() {
 
         <Link
           href="/forgot-password"
-          className="self-start text-body-sm text-primary underline-offset-4 hover:underline"
+          className="inline-flex min-h-11 items-center self-start text-body-sm text-primary underline-offset-4 hover:underline"
         >
           {t("forgotPassword")}
         </Link>

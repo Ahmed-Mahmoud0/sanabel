@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
+import {
+  clearLocaleSwitchFormState,
+  useLocaleSwitchFormState,
+} from "@/lib/i18n/locale-switch-form-state";
 import { authClient } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/auth/field";
@@ -16,6 +20,11 @@ export function ForgotPasswordForm() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+
+  // Preserve the typed email across a language switch (AC #2).
+  useLocaleSwitchFormState("form:forgot-password", {
+    email: { value: email, set: setEmail },
+  });
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,6 +41,7 @@ export function ForgotPasswordForm() {
         setError(t("genericError"));
         return;
       }
+      clearLocaleSwitchFormState("form:forgot-password");
       setSent(true);
     } catch {
       setError(t("genericError"));

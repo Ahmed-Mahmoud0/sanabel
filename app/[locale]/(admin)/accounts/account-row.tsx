@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/auth/form-message";
+import { actionErrorText } from "@/lib/actions/result";
 import { setInstructorRoleAction } from "@/lib/modules/accounts/actions";
 import type { AccountSummary } from "@/lib/modules/accounts/service";
 
@@ -20,24 +21,22 @@ export function AccountRow({ account }: { account: AccountSummary }) {
 
   const willGrant = !account.isInstructor;
 
-  function messageForCode(code: string): string {
-    switch (code) {
-      case "forbidden":
-        return t("errorForbidden");
-      case "not_found":
-        return t("errorNotFound");
-      default:
-        return t("errorGeneric");
-    }
-  }
-
   function handleClick() {
     setError(null);
     startTransition(async () => {
       try {
         const result = await setInstructorRoleAction(account.id, willGrant);
         if (!result.ok) {
-          setError(messageForCode(result.error.code));
+          setError(
+            actionErrorText(
+              result.error.code,
+              {
+                forbidden: t("errorForbidden"),
+                not_found: t("errorNotFound"),
+              },
+              t("errorGeneric"),
+            ),
+          );
         }
       } catch {
         // The action itself never throws, but the dispatch can reject — a

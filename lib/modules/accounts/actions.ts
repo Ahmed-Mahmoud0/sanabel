@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
+import type { ActionResult } from "@/lib/actions/result";
 import { AuthorizationError, requireRole } from "@/lib/auth/authorization";
 import { setInstructorRole } from "@/lib/modules/accounts/service";
 
@@ -15,16 +16,6 @@ import { setInstructorRole } from "@/lib/modules/accounts/service";
  * internal detail this action must *absorb*, not propagate — so the whole body
  * runs inside try/catch and every failure becomes `{ok:false, error}`.
  */
-
-/**
- * Consistency Conventions discriminated union for every Server Action. `code` is
- * the stable, machine-readable key the client maps to a localized string;
- * `message` is a non-localized diagnostic for logs/telemetry only — never render
- * it in the UI.
- */
-export type ActionResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: { code: string; message: string } };
 
 /**
  * Grant or revoke the Instructor role on any account (FR-4). Admin only.
@@ -47,8 +38,9 @@ export async function setInstructorRoleAction(
     }
 
     // Re-render the accounts list so the row's badge/button reflect the change
-    // without a full reload.
-    revalidatePath("/[locale]/(admin)/accounts", "page");
+    // without a full reload. Path is the route pattern (dynamic `[locale]` +
+    // `type: "page"`); route groups like `(admin)` are not part of it.
+    revalidatePath("/[locale]/accounts", "page");
 
     return {
       ok: true,

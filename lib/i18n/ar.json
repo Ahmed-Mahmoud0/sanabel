@@ -149,5 +149,56 @@
     "saving": "جارٍ الحفظ…",
     "success": "تم تحديث ملفك الشخصي.",
     "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+  },
+  "Course": {
+    "new": {
+      "title": "إنشاء دورة",
+      "subtitle": "فقط عنوان ووصف من سطر واحد وفئة. يمكنك بناء كل شيء آخر بعد ذلك.",
+      "titleLabel": "عنوان الدورة",
+      "titlePlaceholder": "مثال: مقدمة في بايثون",
+      "titleRequiredError": "أدخل عنوانًا للدورة.",
+      "titleTooLongError": "يجب ألا يتجاوز العنوان {max} حرفًا.",
+      "descriptionLabel": "وصف من سطر واحد",
+      "descriptionPlaceholder": "جملة واحدة عمّا تُعلّمه هذه الدورة.",
+      "descriptionRequiredError": "أدخل وصفًا من سطر واحد.",
+      "descriptionTooLongError": "يجب ألا يتجاوز الوصف {max} حرفًا.",
+      "categoryLabel": "الفئة",
+      "categoryPlaceholder": "اختر فئة",
+      "categoryRequiredError": "اختر فئة.",
+      "contentLanguageLabel": "لغة المحتوى",
+      "contentLanguagePlaceholder": "اختر لغة",
+      "contentLanguageRequiredError": "اختر اللغة التي ستُدرّس بها.",
+      "contentLanguageHint": "اللغة التي ستُدرّس بها هذه الدورة. لا يمكن تغييرها لاحقًا.",
+      "submit": "إنشاء الدورة",
+      "submitting": "جارٍ الإنشاء…",
+      "errorForbidden": "تحتاج إلى دور المدرّب لإنشاء دورة.",
+      "errorGeneric": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    },
+    "categories": {
+      "programming-fundamentals": "أساسيات البرمجة",
+      "web-development": "تطوير الويب",
+      "data-science": "علم البيانات",
+      "mobile-development": "تطوير تطبيقات الجوال",
+      "devops-cloud": "DevOps والحوسبة السحابية",
+      "computer-science": "علوم الحاسوب",
+      "other": "أخرى"
+    },
+    "language": {
+      "taughtIn": "لغة التدريس: {language}",
+      "en": "الإنجليزية",
+      "ar": "العربية"
+    },
+    "list": {
+      "title": "دوراتي",
+      "subtitle": "أنشئ وأدِر الدورات التي تُدرّسها.",
+      "createCta": "إنشاء دورة",
+      "emptyCta": "أنشئ دورتك الأولى",
+      "unpublished": "غير منشورة"
+    },
+    "builder": {
+      "backToCourses": "العودة إلى دوراتي",
+      "draftBadge": "مسودة — غير منشورة",
+      "outlineComingSoon": "هذه هي صفحة دورتك الرئيسية. إضافة الوحدات والدروس تأتي لاحقًا."
+    }
   }
 }

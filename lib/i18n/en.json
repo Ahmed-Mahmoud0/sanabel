@@ -149,5 +149,56 @@
     "saving": "Saving…",
     "success": "Your profile has been updated.",
     "genericError": "Something went wrong. Please try again."
+  },
+  "Course": {
+    "new": {
+      "title": "Create a course",
+      "subtitle": "Just a title, a one-line description, and a category. You can build everything else next.",
+      "titleLabel": "Course title",
+      "titlePlaceholder": "e.g. Introduction to Python",
+      "titleRequiredError": "Enter a course title.",
+      "titleTooLongError": "Title must be {max} characters or fewer.",
+      "descriptionLabel": "One-line description",
+      "descriptionPlaceholder": "One sentence on what this course teaches.",
+      "descriptionRequiredError": "Enter a one-line description.",
+      "descriptionTooLongError": "Description must be {max} characters or fewer.",
+      "categoryLabel": "Category",
+      "categoryPlaceholder": "Choose a category",
+      "categoryRequiredError": "Choose a category.",
+      "contentLanguageLabel": "Content language",
+      "contentLanguagePlaceholder": "Choose a language",
+      "contentLanguageRequiredError": "Choose the language you’ll teach in.",
+      "contentLanguageHint": "The language you’ll teach this course in. This can’t be changed later.",
+      "submit": "Create course",
+      "submitting": "Creating…",
+      "errorForbidden": "You need the Instructor role to create a course.",
+      "errorGeneric": "Something went wrong. Please try again."
+    },
+    "categories": {
+      "programming-fundamentals": "Programming fundamentals",
+      "web-development": "Web development",
+      "data-science": "Data science",
+      "mobile-development": "Mobile development",
+      "devops-cloud": "DevOps & cloud",
+      "computer-science": "Computer science",
+      "other": "Other"
+    },
+    "language": {
+      "taughtIn": "Taught in: {language}",
+      "en": "English",
+      "ar": "Arabic"
+    },
+    "list": {
+      "title": "My Courses",
+      "subtitle": "Create and manage the courses you teach.",
+      "createCta": "Create a course",
+      "emptyCta": "Create your first course",
+      "unpublished": "Unpublished"
+    },
+    "builder": {
+      "backToCourses": "Back to My Courses",
+      "draftBadge": "Draft — not published",
+      "outlineComingSoon": "This is your course home. Adding modules and lessons comes next."
+    }
   }
 }

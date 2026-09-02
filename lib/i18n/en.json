@@ -13,6 +13,7 @@
     "myLearning": "My Learning",
     "myCourses": "My Courses",
     "moderation": "Admin moderation",
+    "profile": "Profile",
     "signIn": "Sign in",
     "signUp": "Sign up",
     "signOut": "Sign out"
@@ -119,5 +120,20 @@
       "errorNotFound": "That account no longer exists.",
       "errorGeneric": "Something went wrong. Please try again."
     }
+  },
+  "Profile": {
+    "title": "Profile",
+    "subtitle": "Update how you appear to others on Sanabel.",
+    "displayNameLabel": "Display name",
+    "displayNamePlaceholder": "e.g. Ahmed",
+    "displayNameRequiredError": "Display name can’t be empty.",
+    "bioLabel": "Instructor bio",
+    "bioPlaceholder": "A short introduction learners will see on your courses.",
+    "bioCharCount": "{count} / {max} characters",
+    "bioTooLongError": "Bio must be {max} characters or fewer.",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "success": "Your profile has been updated.",
+    "genericError": "Something went wrong. Please try again."
   }
 }

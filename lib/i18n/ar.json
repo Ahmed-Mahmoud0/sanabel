@@ -13,6 +13,7 @@
     "myLearning": "تعلُّمي",
     "myCourses": "دوراتي",
     "moderation": "الإشراف الإداري",
+    "profile": "الملف الشخصي",
     "signIn": "تسجيل الدخول",
     "signUp": "إنشاء حساب",
     "signOut": "تسجيل الخروج"
@@ -119,5 +120,20 @@
       "errorNotFound": "لم يعد هذا الحساب موجودًا.",
       "errorGeneric": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
     }
+  },
+  "Profile": {
+    "title": "الملف الشخصي",
+    "subtitle": "حدّث كيف تظهر للآخرين على سنابل.",
+    "displayNameLabel": "الاسم المعروض",
+    "displayNamePlaceholder": "مثال: أحمد",
+    "displayNameRequiredError": "لا يمكن أن يكون الاسم المعروض فارغًا.",
+    "bioLabel": "نبذة المدرّب",
+    "bioPlaceholder": "مقدمة قصيرة يراها المتعلّمون في دوراتك.",
+    "bioCharCount": "{count} / {max} حرفًا",
+    "bioTooLongError": "يجب ألا تتجاوز النبذة {max} حرفًا.",
+    "save": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "success": "تم تحديث ملفك الشخصي.",
+    "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
   }
 }

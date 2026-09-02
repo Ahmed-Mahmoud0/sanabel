@@ -35,6 +35,11 @@ export async function SiteHeader() {
               {t("myLearning")}
             </Link>
           )}
+          {user && (
+            <Link href="/profile" className={linkClass}>
+              {t("profile")}
+            </Link>
+          )}
           {hasRole(user, "instructor") && (
             <Link href="/courses" className={linkClass}>
               {t("myCourses")}

@@ -60,6 +60,34 @@ export async function setInstructorRole(
   return updated ?? null;
 }
 
+/**
+ * Read-only public-facing profile slice for one account (Story 1.5, AC #4).
+ * Other modules (Course Authoring / Discovery — Epics 2/3) call this to render
+ * an Instructor's name and bio without reaching into the `user` table
+ * themselves, per AD-3's cross-module access rule. No consumer exists yet; this
+ * story only needs the accessor exposed.
+ *
+ * Returns the value or `null` directly — not the `{ ok, ... }` discriminated
+ * union. That convention governs mutations crossing the client boundary
+ * (Server Actions / Route Handlers), not a plain intra-server read like this
+ * one, which mirrors `listAccounts` / `setInstructorRole` in this same file.
+ */
+export async function getPublicProfile(
+  userId: string,
+): Promise<{ name: string; bio: string | null; isInstructor: boolean } | null> {
+  const [row] = await db
+    .select({
+      name: user.name,
+      bio: user.bio,
+      isInstructor: user.isInstructor,
+    })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1);
+
+  return row ?? null;
+}
+
 /** Escape LIKE metacharacters so a user's `%`/`_`/`\` search for a literal. */
 function escapeLike(input: string): string {
   return input.replace(/[\\%_]/g, (char) => `\\${char}`);

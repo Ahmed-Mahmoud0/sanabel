@@ -9,6 +9,14 @@ export const user = pgTable(
     email: text("email").notNull().unique(),
     emailVerified: boolean("email_verified").default(false).notNull(),
     image: text("image"),
+    // Self-editable profile field (Story 1.5). Nullable free text — only
+    // surfaced/editable for Instructors in the UI, but the column itself carries
+    // no role constraint. Unlike the role flags below it is NOT `input: false`
+    // in lib/auth/config.ts: a signed-in user sets their own bio through Better
+    // Auth's self-service `/update-user` endpoint. Soft length cap lives in
+    // lib/modules/accounts/profile.ts and is enforced via that field's
+    // `validator.input`, not a DB constraint (kept `text` per the story).
+    bio: text("bio"),
     // Additive role flags (AD-6): independent booleans on the one Account row,
     // never separate entities. Admin does NOT imply Instructor — both are
     // checked independently. Client-writable input is blocked in

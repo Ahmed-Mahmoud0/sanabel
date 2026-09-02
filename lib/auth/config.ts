@@ -1,10 +1,12 @@
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/lib/db/client";
 import * as schema from "@/lib/db/schema";
 import { generateId } from "@/lib/db/id";
 import { getLocaleFromRequest } from "@/lib/auth/locale";
 import { sendResetPasswordEmail, sendVerificationEmail } from "@/lib/auth/send-email";
+import { BIO_MAX_LENGTH } from "@/lib/modules/accounts/profile";
 
 // Task 2's whole purpose is to keep the Admin surface reachable. If the var is
 // missing in production, nothing grants Admin and the failure is otherwise
@@ -37,6 +39,51 @@ export const auth = betterAuth({
     additionalFields: {
       isInstructor: { type: "boolean", defaultValue: false, input: false },
       isAdmin: { type: "boolean", defaultValue: false, input: false },
+      // Self-editable profile bio (Story 1.5). Contrast with the two role flags
+      // above: those are `input: false` because only the server (Story 1.4 /
+      // ADMIN_EMAIL bootstrap) may set them. `bio` is a normal self-service
+      // field — `input` is left at its default (`true`) so a signed-in user can
+      // set their own bio via Better Auth's `/update-user` (which targets
+      // `session.user.id`). `required: false` → the DB column stays nullable.
+      //
+      // Two server-side backstops, both in this file:
+      //   1. `validator.input` below caps length — a hand-rolled Standard Schema
+      //      (no validation library for one bound). Better Auth runs
+      //      `validator.input["~standard"].validate()` on every `/update-user`
+      //      that carries a `bio`, so a UI-bypassing request is rejected past
+      //      the limit. `null`/`undefined` pass through (clearing the bio).
+      //   2. `databaseHooks.user.update.before` (below) rejects a `bio` in the
+      //      payload from any non-Instructor — the Instructor-only rule is not
+      //      just a UI concern. Added by the 2026-09-02 code review, overriding
+      //      this story's original Task 4 "accept the gap" note.
+      bio: {
+        type: "string",
+        required: false,
+        validator: {
+          input: {
+            "~standard": {
+              version: 1,
+              vendor: "sanabel",
+              validate: (value: unknown) => {
+                if (value == null) {
+                  return { value };
+                }
+                if (typeof value !== "string") {
+                  return { issues: [{ message: "bio must be a string or null" }] };
+                }
+                if (value.length > BIO_MAX_LENGTH) {
+                  return {
+                    issues: [
+                      { message: `bio must be at most ${BIO_MAX_LENGTH} characters` },
+                    ],
+                  };
+                }
+                return { value };
+              },
+            },
+          },
+        },
+      },
     },
   },
   databaseHooks: {
@@ -65,6 +112,26 @@ export const auth = betterAuth({
             console.warn(`[auth] ADMIN_EMAIL bootstrap: granting Admin to ${user.email}`);
             return { data: { ...user, isAdmin: true } };
           }
+        },
+      },
+      update: {
+        // Server-side enforcement of the Instructor-only `bio` rule (Story 1.5
+        // AC #3, hardened by the 2026-09-02 code review). The `bio`
+        // additionalField has `input: true`, so without this a signed-in
+        // Learner could `POST /api/auth/update-user {"bio":"…"}` straight past
+        // the UI, which never renders the field for them. `bio` reaches a user
+        // update only via `/update-user` (self-service, `session.user.id`);
+        // Story 1.4's admin grant/revoke is a direct Drizzle write that never
+        // runs this hook, and email-verification updates carry no `bio` key.
+        before: async (data, ctx) => {
+          if (!("bio" in data)) return;
+          const actor = ctx?.context.session?.user as
+            | { isInstructor?: boolean }
+            | undefined;
+          if (actor?.isInstructor === true) return;
+          throw new APIError("FORBIDDEN", {
+            message: "Only instructors can set a profile bio.",
+          });
         },
       },
     },

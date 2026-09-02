@@ -4,7 +4,7 @@ baseline_commit: 2af9cf124e38a4ff5ce7e0f18b829bbd36c89089
 
 # Story 2.1: Low-Friction Course Creation
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 

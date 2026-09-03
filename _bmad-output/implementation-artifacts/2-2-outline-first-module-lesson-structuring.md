@@ -4,7 +4,7 @@ baseline_commit: 7b68cbfbbdf81ee188a1cc38b9e7d2a48e4ac02c
 
 # Story 2.2: Outline-First Module & Lesson Structuring
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 

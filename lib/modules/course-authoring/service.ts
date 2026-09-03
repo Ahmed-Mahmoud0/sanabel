@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/lib/db/client";
 import type {
@@ -354,6 +354,177 @@ export async function setLessonRequired(input: {
     .returning();
 
   return updated ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Outline: drag / keyboard reorder (Story 2.3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Reorder outcome. `mismatch` means the ids the client sent are not a
+ * permutation of the parent's current live children (a stale tab, a concurrent
+ * add/remove, or a crafted payload) — nothing is written and the action maps
+ * this to `stale_outline` so the client re-syncs from a fresh `getCourseOutline`.
+ */
+export type ReorderResult = { ok: true } | { ok: false; reason: "mismatch" };
+
+/** `b` is a duplicate-free reordering of exactly the members of `a`. */
+function isPermutation(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const seen = new Set(a);
+  if (seen.size !== a.length) return false;
+  const dedupeB = new Set(b);
+  if (dedupeB.size !== b.length) return false;
+  for (const id of b) {
+    if (!seen.has(id)) return false;
+  }
+  return true;
+}
+
+/**
+ * Story 2.2's `(parent_id, position)` partial-unique index rejects any
+ * intermediate duplicate, and this Neon Postgres checks that index per-row
+ * during a multi-row UPDATE (a single `UPDATE ... SET position = CASE ... END`
+ * that permutes the live range trips 23505). `neon-http` also has no
+ * interactive transaction. So the rewrite is **two statements in one atomic
+ * `db.batch`**:
+ *
+ *   1. shove every affected row's `position` up by `POSITION_REWRITE_OFFSET`,
+ *      vacating the `[0, n)` range;
+ *   2. `CASE`-map each row from that parked range down to its final `[0, n)`
+ *      slot — every target is now unoccupied, so no per-row collision, whatever
+ *      order Postgres processes the rows in.
+ *
+ * `db.batch` sends both as one Neon transaction over HTTP (all-or-nothing).
+ * Drizzle's `$onUpdate` bumps `updated_at` on every row each statement touches
+ * (all live siblings).
+ */
+const POSITION_REWRITE_OFFSET = 1_000_000;
+
+/**
+ * The `[0, n)` assignment as one SQL `CASE`: `case <id> when <id0> then 0 ...
+ * else <position> end`. `orderedIds` is always the full live sibling set (the
+ * permutation check guarantees it), so the `else` branch is unreachable.
+ */
+function positionCaseExpr(
+  idCol: typeof courseModule.id | typeof lesson.id,
+  positionCol: typeof courseModule.position | typeof lesson.position,
+  orderedIds: string[],
+): SQL {
+  return sql`case ${idCol} ${sql.join(
+    orderedIds.map((id, index) => sql`when ${id} then ${index}`),
+    sql` `,
+  )} else ${positionCol} end`;
+}
+
+/**
+ * Run the two-phase rewrite as one atomic `db.batch`. A `23505` here means a
+ * concurrent `addModule`/`addLesson` (or soft-remove) landed between this
+ * function's `live` read and the batch, leaving a sibling outside the scoped id
+ * set whose `position` collides with a phase-2 target — same staleness signal
+ * as a permutation mismatch, so the client re-syncs rather than seeing a
+ * generic "unknown" error.
+ */
+async function runReorderBatch(
+  statements: Parameters<typeof db.batch>[0],
+): Promise<ReorderResult> {
+  try {
+    await db.batch(statements);
+    return { ok: true };
+  } catch (error) {
+    if (isUniquePositionClash(error)) return { ok: false, reason: "mismatch" };
+    throw error;
+  }
+}
+
+/**
+ * Reorder a Course's non-removed Modules to `orderedModuleIds` (AC #1). Returns
+ * `mismatch` (writing nothing) when `orderedModuleIds` is not a dup-free
+ * permutation of the course's current live module id set, or when a concurrent
+ * structural change makes the batch collide.
+ */
+export async function reorderModules(input: {
+  courseId: string;
+  orderedModuleIds: string[];
+}): Promise<ReorderResult> {
+  const { courseId, orderedModuleIds } = input;
+
+  const live = await db
+    .select({ id: courseModule.id })
+    .from(courseModule)
+    .where(
+      and(eq(courseModule.courseId, courseId), isNull(courseModule.removedAt)),
+    );
+
+  if (!isPermutation(live.map((r) => r.id), orderedModuleIds)) {
+    return { ok: false, reason: "mismatch" };
+  }
+  if (orderedModuleIds.length === 0) return { ok: true };
+
+  const scope = and(
+    eq(courseModule.courseId, courseId),
+    inArray(courseModule.id, orderedModuleIds),
+    isNull(courseModule.removedAt),
+  );
+
+  return runReorderBatch([
+    db
+      .update(courseModule)
+      .set({ position: sql`${courseModule.position} + ${POSITION_REWRITE_OFFSET}` })
+      .where(scope),
+    db
+      .update(courseModule)
+      .set({
+        position: positionCaseExpr(
+          courseModule.id,
+          courseModule.position,
+          orderedModuleIds,
+        ),
+      })
+      .where(scope),
+  ]);
+}
+
+/**
+ * Reorder one Module's non-removed Lessons to `orderedLessonIds` (AC #1).
+ * Lessons only ever reorder *within* their Module — there is no cross-module
+ * move in this story, so `moduleId` is fixed and the id set is validated
+ * against that one Module's live lessons.
+ */
+export async function reorderLessons(input: {
+  moduleId: string;
+  orderedLessonIds: string[];
+}): Promise<ReorderResult> {
+  const { moduleId, orderedLessonIds } = input;
+
+  const live = await db
+    .select({ id: lesson.id })
+    .from(lesson)
+    .where(and(eq(lesson.moduleId, moduleId), isNull(lesson.removedAt)));
+
+  if (!isPermutation(live.map((r) => r.id), orderedLessonIds)) {
+    return { ok: false, reason: "mismatch" };
+  }
+  if (orderedLessonIds.length === 0) return { ok: true };
+
+  const scope = and(
+    eq(lesson.moduleId, moduleId),
+    inArray(lesson.id, orderedLessonIds),
+    isNull(lesson.removedAt),
+  );
+
+  return runReorderBatch([
+    db
+      .update(lesson)
+      .set({ position: sql`${lesson.position} + ${POSITION_REWRITE_OFFSET}` })
+      .where(scope),
+    db
+      .update(lesson)
+      .set({
+        position: positionCaseExpr(lesson.id, lesson.position, orderedLessonIds),
+      })
+      .where(scope),
+  ]);
 }
 
 /**

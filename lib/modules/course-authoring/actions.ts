@@ -23,6 +23,8 @@ import {
   getCourseById,
   getLessonCourseContext,
   getModuleCourseContext,
+  reorderLessons,
+  reorderModules,
   setLessonRequired,
   updateLessonTitle,
   updateModuleTitle,
@@ -301,5 +303,99 @@ export async function setLessonRequiredAction(
     return { ok: true, data: { required: updated.required } };
   } catch (error) {
     return toErrorResult(error, "setLessonRequiredAction");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Outline editor: drag / keyboard reorder (Story 2.3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Cheap fail-fast shape check on a reorder payload before the service runs. The
+ * real gate is the service's permutation check against the live sibling set;
+ * this only rejects obvious garbage (not an array, non-string members, or
+ * duplicates). An empty array is well-formed — the service treats it as a
+ * harmless no-op (`{ ok: true }`), so both layers agree.
+ */
+function isWellFormedIdList(value: unknown): value is string[] {
+  if (!Array.isArray(value)) return false;
+  if (!value.every((id) => typeof id === "string" && id.length > 0)) return false;
+  return new Set(value).size === value.length;
+}
+
+/**
+ * Reorder a Course's Modules to `orderedModuleIds` (AC #1). Instructor + owner
+ * only. Discrete autosave — no `revalidatePath` (it would thrash the RSC
+ * payload against the client's optimistic outline). `stale_outline` when the
+ * payload no longer matches the course's live module set — the client re-syncs
+ * from a fresh `getCourseOutline`.
+ */
+export async function reorderModulesAction(
+  courseId: string,
+  orderedModuleIds: string[],
+): Promise<ActionResult<null>> {
+  try {
+    const auth = await requireOwner(async () => {
+      const c = await getCourseById(courseId);
+      return c ? { instructorId: c.instructorId } : null;
+    }, "course");
+    if (!auth.ok) return { ok: false, error: auth.error };
+
+    if (!isWellFormedIdList(orderedModuleIds)) {
+      return {
+        ok: false,
+        error: { code: "bad_request", message: "malformed module id list" },
+      };
+    }
+
+    const result = await reorderModules({ courseId, orderedModuleIds });
+    if (!result.ok) {
+      return {
+        ok: false,
+        error: { code: "stale_outline", message: "module set changed — reload" },
+      };
+    }
+
+    return { ok: true, data: null };
+  } catch (error) {
+    return toErrorResult(error, "reorderModulesAction");
+  }
+}
+
+/**
+ * Reorder one Module's Lessons to `orderedLessonIds` (AC #1). Instructor +
+ * owner only. Lessons reorder *within their Module only* — a foreign lesson id
+ * in the payload fails the service's permutation check and returns
+ * `stale_outline`.
+ */
+export async function reorderLessonsAction(
+  moduleId: string,
+  orderedLessonIds: string[],
+): Promise<ActionResult<null>> {
+  try {
+    const auth = await requireOwner(
+      () => getModuleCourseContext(moduleId),
+      "module",
+    );
+    if (!auth.ok) return { ok: false, error: auth.error };
+
+    if (!isWellFormedIdList(orderedLessonIds)) {
+      return {
+        ok: false,
+        error: { code: "bad_request", message: "malformed lesson id list" },
+      };
+    }
+
+    const result = await reorderLessons({ moduleId, orderedLessonIds });
+    if (!result.ok) {
+      return {
+        ok: false,
+        error: { code: "stale_outline", message: "lesson set changed — reload" },
+      };
+    }
+
+    return { ok: true, data: null };
+  } catch (error) {
+    return toErrorResult(error, "reorderLessonsAction");
   }
 }

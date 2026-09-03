@@ -235,7 +235,22 @@
         "code": "Code exercise"
       },
       "requiredToggle": "Counts toward certificate",
-      "loadingOutline": "Loading course outline…"
+      "loadingOutline": "Loading course outline…",
+      "reorder": {
+        "moduleHandleAria": "Reorder module: {title}",
+        "lessonHandleAria": "Reorder lesson: {title}",
+        "moveModuleUp": "Move module up: {title}",
+        "moveModuleDown": "Move module down: {title}",
+        "moveLessonUp": "Move lesson up: {title}",
+        "moveLessonDown": "Move lesson down: {title}",
+        "movedAnnouncement": "Moved to {position} of {total}",
+        "error": "Couldn’t save the new order. Try again.",
+        "staleOutline": "The outline changed elsewhere — reloading.",
+        "dndInstructions": "Drag to reorder. For keyboard, use the Move up and Move down buttons on each row.",
+        "dndPickedUp": "Started dragging. Drop over another row to reorder.",
+        "dndDropped": "Dropped. Order updated.",
+        "dndCancelled": "Reorder cancelled."
+      }
     }
   }
 }

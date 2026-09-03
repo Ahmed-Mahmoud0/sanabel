@@ -235,7 +235,22 @@
         "code": "تمرين برمجي"
       },
       "requiredToggle": "محتسب ضمن الشهادة",
-      "loadingOutline": "جارٍ تحميل مخطط الدورة…"
+      "loadingOutline": "جارٍ تحميل مخطط الدورة…",
+      "reorder": {
+        "moduleHandleAria": "إعادة ترتيب الوحدة: {title}",
+        "lessonHandleAria": "إعادة ترتيب الدرس: {title}",
+        "moveModuleUp": "نقل الوحدة لأعلى: {title}",
+        "moveModuleDown": "نقل الوحدة لأسفل: {title}",
+        "moveLessonUp": "نقل الدرس لأعلى: {title}",
+        "moveLessonDown": "نقل الدرس لأسفل: {title}",
+        "movedAnnouncement": "نُقل إلى {position} من {total}",
+        "error": "تعذّر حفظ الترتيب الجديد. حاول مرة أخرى.",
+        "staleOutline": "تغيّر المخطط في مكان آخر — جارٍ إعادة التحميل.",
+        "dndInstructions": "اسحب لإعادة الترتيب. للوحة المفاتيح، استخدم زرَّي التحريك لأعلى ولأسفل في كل صف.",
+        "dndPickedUp": "بدأ السحب. أفلِت فوق صف آخر لإعادة الترتيب.",
+        "dndDropped": "تم الإفلات. حُدِّث الترتيب.",
+        "dndCancelled": "أُلغيت إعادة الترتيب."
+      }
     }
   }
 }

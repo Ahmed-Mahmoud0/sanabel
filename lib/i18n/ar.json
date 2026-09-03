@@ -197,8 +197,44 @@
     },
     "builder": {
       "backToCourses": "العودة إلى دوراتي",
-      "draftBadge": "مسودة — غير منشورة",
-      "outlineComingSoon": "هذه هي صفحة دورتك الرئيسية. إضافة الوحدات والدروس تأتي لاحقًا."
+      "draftBadge": "مسودة — غير منشورة"
+    },
+    "outline": {
+      "breadcrumb": "دوراتي",
+      "instructorBadge": "مدرّب",
+      "previewAsLearner": "معاينة كمتعلّم",
+      "publish": "نشر",
+      "comingSoon": "قريبًا",
+      "status": {
+        "editing": "جارٍ التحرير…",
+        "saved": "تم الحفظ.",
+        "error": "تعذّر حفظ تغييراتك.",
+        "retry": "إعادة المحاولة"
+      },
+      "emptyTitle": "ابدأ ببناء مخطط دورتك",
+      "emptyBody": "أضف الوحدات والدروس الآن — سمِّها أولًا واكتب المحتوى لاحقًا.",
+      "addFirstModule": "أضف وحدتك الأولى",
+      "addModule": "إضافة وحدة",
+      "addLesson": "إضافة درس",
+      "adding": "جارٍ الإضافة…",
+      "addError": "تعذّرت الإضافة. حاول مرة أخرى.",
+      "toggleError": "تعذّر تحديث الدرس. حاول مرة أخرى.",
+      "moduleTitleAria": "عنوان الوحدة",
+      "lessonTitleAria": "عنوان الدرس",
+      "moduleTitlePlaceholder": "اسم الوحدة",
+      "lessonTitlePlaceholder": "اسم الدرس",
+      "untitledModule": "وحدة بلا عنوان",
+      "untitledLesson": "درس بلا عنوان",
+      "notStarted": "لم يبدأ",
+      "lessonType": {
+        "video": "فيديو",
+        "text": "نص",
+        "pdf": "PDF",
+        "quiz": "اختبار",
+        "code": "تمرين برمجي"
+      },
+      "requiredToggle": "محتسب ضمن الشهادة",
+      "loadingOutline": "جارٍ تحميل مخطط الدورة…"
     }
   }
 }

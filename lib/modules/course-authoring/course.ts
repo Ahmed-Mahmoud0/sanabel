@@ -30,10 +30,51 @@ export const COURSE_CATEGORIES = [
   "mobile-development",
   "devops-cloud",
   "computer-science",
+  "rpa",
   "other",
 ] as const;
 
 export type CourseCategory = (typeof COURSE_CATEGORIES)[number];
+
+/**
+ * Lesson Type taxonomy (FR-9) — the five kinds a Lesson can be. `code` is the
+ * Interactive Code Exercise (matches the outline mockup's `CODE` chip).
+ *
+ * Story 2.2 adds the column and enum but **no UI to set it** — a Lesson is
+ * created title-only (AC #2) and the per-type authoring surfaces are Stories
+ * 2.4–2.8. It lands now because AD-4 names "Lesson Type" as part of autosave
+ * field-group (a) "outline metadata" — the field-group this story's autosave
+ * owns — and shipping it now avoids a schema migration mid-Epic. A Lesson with
+ * `lessonType = null` renders as "not started" in the outline.
+ */
+export const LESSON_TYPES = ["video", "text", "pdf", "quiz", "code"] as const;
+
+export type LessonType = (typeof LESSON_TYPES)[number];
+
+/**
+ * Trimmed outline shapes the editor renders. Declared here (not in `service.ts`)
+ * so the client outline editor can import them without pulling `service.ts`'s
+ * `db` dependency into the client bundle. `service.ts` re-uses these for
+ * `getCourseOutline`'s return type.
+ */
+export interface OutlineLesson {
+  id: string;
+  title: string;
+  lessonType: LessonType | null;
+  required: boolean;
+  position: number;
+}
+
+export interface OutlineModule {
+  id: string;
+  title: string;
+  position: number;
+  lessons: OutlineLesson[];
+}
+
+export interface CourseOutline {
+  modules: OutlineModule[];
+}
 
 /**
  * Course content language (AD-9). Set once by the Instructor at creation and
@@ -67,6 +108,43 @@ function memberOf<T extends string>(
 
 export const isCourseCategory = memberOf(COURSE_CATEGORIES);
 export const isCourseContentLanguage = memberOf(COURSE_CONTENT_LANGUAGES);
+export const isLessonType = memberOf(LESSON_TYPES);
+
+/**
+ * Soft length caps on the outline's editable titles (Module name, Lesson name).
+ * Nothing upstream pins a number — same judgment call as `COURSE_TITLE_MAX_LENGTH`
+ * (120), and kept equal to it so the outline reads consistently with the course
+ * title above it. Enforced client-side (`maxLength` + `parseOutlineTitle`) and
+ * server-side (`parseOutlineTitle` in `actions.ts`).
+ */
+export const MODULE_TITLE_MAX_LENGTH = 120;
+export const LESSON_TITLE_MAX_LENGTH = 120;
+
+/** Stable error codes for an outline title, shared client + server. */
+export type OutlineTitleError = "title_required" | "title_too_long";
+
+export type ParseOutlineTitleResult =
+  | { ok: true; value: string }
+  | { ok: false; error: OutlineTitleError };
+
+/**
+ * Trim + validate a single outline title (Module or Lesson) from an untrusted
+ * source. The one home for the rule — the Server Action and the client editor
+ * both call this rather than re-spelling the checks (same pattern as
+ * `parseCourseFields`). `maxLength` is passed in so Module and Lesson can
+ * diverge later without touching callers.
+ */
+export function parseOutlineTitle(
+  raw: unknown,
+  maxLength: number,
+): ParseOutlineTitleResult {
+  const title = typeof raw === "string" ? raw.trim() : "";
+
+  if (title === "") return { ok: false, error: "title_required" };
+  if (title.length > maxLength) return { ok: false, error: "title_too_long" };
+
+  return { ok: true, value: title };
+}
 
 /**
  * Stable error codes for the four creation fields. The Server Action returns

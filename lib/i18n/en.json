@@ -197,8 +197,44 @@
     },
     "builder": {
       "backToCourses": "Back to My Courses",
-      "draftBadge": "Draft — not published",
-      "outlineComingSoon": "This is your course home. Adding modules and lessons comes next."
+      "draftBadge": "Draft — not published"
+    },
+    "outline": {
+      "breadcrumb": "My Courses",
+      "instructorBadge": "Instructor",
+      "previewAsLearner": "Preview as learner",
+      "publish": "Publish",
+      "comingSoon": "Coming soon",
+      "status": {
+        "editing": "Editing…",
+        "saved": "Saved.",
+        "error": "Couldn’t save your changes.",
+        "retry": "Retry"
+      },
+      "emptyTitle": "Start building your outline",
+      "emptyBody": "Add modules and lessons now — name them first and write the content later.",
+      "addFirstModule": "Add your first module",
+      "addModule": "Add module",
+      "addLesson": "Add lesson",
+      "adding": "Adding…",
+      "addError": "Couldn’t add that. Try again.",
+      "toggleError": "Couldn’t update the lesson. Try again.",
+      "moduleTitleAria": "Module title",
+      "lessonTitleAria": "Lesson title",
+      "moduleTitlePlaceholder": "Module name",
+      "lessonTitlePlaceholder": "Lesson name",
+      "untitledModule": "Untitled module",
+      "untitledLesson": "Untitled lesson",
+      "notStarted": "Not started",
+      "lessonType": {
+        "video": "Video",
+        "text": "Text",
+        "pdf": "PDF",
+        "quiz": "Quiz",
+        "code": "Code exercise"
+      },
+      "requiredToggle": "Counts toward certificate",
+      "loadingOutline": "Loading course outline…"
     }
   }
 }

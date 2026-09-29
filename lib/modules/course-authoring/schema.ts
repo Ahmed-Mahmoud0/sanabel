@@ -1,8 +1,10 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -17,6 +19,10 @@ import {
   COURSE_CONTENT_LANGUAGES,
   LESSON_TYPES,
 } from "@/lib/modules/course-authoring/course";
+import {
+  LESSON_MEDIA_KINDS,
+  LESSON_MEDIA_STATUSES,
+} from "@/lib/modules/course-authoring/media";
 
 /**
  * Course Authoring schema slice (AD-2). This module owns Course / Module /
@@ -42,6 +48,20 @@ export const courseContentLanguage = pgEnum(
  * creates Lessons title-only; the picker ships in Stories 2.4–2.8.
  */
 export const lessonTypeEnum = pgEnum("lesson_type", LESSON_TYPES);
+
+/** Story 2.4 — the media kind on a Lesson's media record. `pdf` = Story 2.6. */
+export const lessonMediaKind = pgEnum("lesson_media_kind", LESSON_MEDIA_KINDS);
+
+/**
+ * AD-5 canonical upload status. The only values `lesson_media.status` ever
+ * holds. For video, the Cloudflare Stream webhook is the sole writer of
+ * `processing` / `ready` / `failed`; the upload-initiation Route Handler is the
+ * sole writer of `queued`.
+ */
+export const lessonMediaStatus = pgEnum(
+  "lesson_media_status",
+  LESSON_MEDIA_STATUSES,
+);
 
 export const course = pgTable(
   "course",
@@ -138,6 +158,12 @@ export const lesson = pgTable(
     // isCourseComplete() has a stable input regardless of Lesson Type. Story
     // 2.2 AC #6 surfaces the toggle — the Instructor opts a Lesson *out*.
     required: boolean("required").notNull().default(true),
+    // AD-4 field-group (b) — "content body". Introduced by Story 2.4 for Video
+    // (`{ note?: string }`); Stories 2.5–2.8 reuse this one jsonb column for
+    // their type-specific bodies. One column = one debounced write path
+    // (`updateLessonContent`); "no third granularity is introduced by a Lesson
+    // Type-specific editor" (AD-4). Nullable — a title-only Lesson has none.
+    contentBody: jsonb("content_body"),
     removedAt: timestamp("removed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -153,6 +179,63 @@ export const lesson = pgTable(
     uniqueIndex("lesson_module_position_uq")
       .on(table.moduleId, table.position)
       .where(sql`${table.removedAt} is null`),
+  ],
+);
+
+/**
+ * Story 2.4 — one media record per Video (and, from Story 2.6, PDF) Lesson.
+ * Implements AD-5: `status` is the canonical `queued | processing | ready |
+ * failed` enum; for video it is written only by the Cloudflare Stream webhook
+ * (`processing`/`ready`/`failed`) and the upload-initiation Route Handler
+ * (`queued`). `provider_asset_id` is the Cloudflare Stream video `uid`.
+ */
+export const lessonMedia = pgTable(
+  "lesson_media",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => generateId()),
+    lessonId: text("lesson_id")
+      .notNull()
+      .references(() => lesson.id, { onDelete: "cascade" }),
+    kind: lessonMediaKind("kind").notNull(),
+    status: lessonMediaStatus("status").notNull().default("queued"),
+    // Cloudflare Stream video `uid`; set when the direct-upload URL is minted.
+    providerAssetId: text("provider_asset_id"),
+    // Client-reported at initiation, used for the cheap pre-check only. The
+    // authoritative duration comes from the webhook.
+    sizeBytes: bigint("size_bytes", { mode: "number" }),
+    // `maxDurationSeconds` reserved with Cloudflare at direct-upload creation —
+    // Cloudflare bills reserved storage from creation, so this is what the
+    // per-Instructor cap query sums.
+    reservedDurationSeconds: integer("reserved_duration_seconds").notNull(),
+    // Real duration, filled by the webhook when `status` reaches `ready`.
+    durationSeconds: integer("duration_seconds"),
+    // `status.errorReasonText` from the webhook — shown in the failed state.
+    errorReason: text("error_reason"),
+    // AD-11 soft-delete — set when the video is removed, or replaced-and-orphaned.
+    // Excluded from the per-Instructor cap sum and from `getCourseOutline`.
+    removedAt: timestamp("removed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("lesson_media_lesson_id_idx").on(table.lessonId),
+    // At most one live media record per Lesson — AC #5's structural backing on
+    // the content side; a replace reuses this row, a remove soft-deletes it.
+    uniqueIndex("lesson_media_lesson_id_uq")
+      .on(table.lessonId)
+      .where(sql`${table.removedAt} is null`),
+    // The webhook's lookup is by `provider_asset_id` — make it O(1) and
+    // unambiguous. Partial (only rows that actually have a `uid`).
+    uniqueIndex("lesson_media_provider_asset_id_uq")
+      .on(table.providerAssetId)
+      .where(sql`${table.providerAssetId} is not null`),
   ],
 );
 
@@ -176,5 +259,14 @@ export const lessonRelations = relations(lesson, ({ one }) => ({
   module: one(courseModule, {
     fields: [lesson.moduleId],
     references: [courseModule.id],
+  }),
+  // Inverse side of the one-to-one — the FK lives on `lesson_media`.
+  media: one(lessonMedia),
+}));
+
+export const lessonMediaRelations = relations(lessonMedia, ({ one }) => ({
+  lesson: one(lesson, {
+    fields: [lessonMedia.lessonId],
+    references: [lesson.id],
   }),
 }));

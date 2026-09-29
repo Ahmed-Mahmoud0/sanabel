@@ -32,3 +32,10 @@
 ## Deferred from: code review of story-2-3 (2026-09-03)
 
 - Every outline reorder bumps `updated_at` on *all* live siblings, not just the rows whose `position` actually changed — the two-phase `db.batch` position rewrite (`UPDATE … SET position = position + 1_000_000` then the `CASE` remap) targets the whole scoped sibling set, and Drizzle's `$onUpdate` stamps `updated_at` on every row each statement touches. Deferred: nothing currently reads `module`/`lesson` `updated_at` for logic, sorting, caching, or ETags (`getCourseOutline` doesn't even select it), so the only impact is a slightly noisy audit trail; narrowing the rewrite to the moved contiguous sub-range is a real refactor with its own edge cases. The Story 2.3 Task 10 verification line "`updated_at` advanced only on moved rows" should be relaxed to match this reality. [lib/modules/course-authoring/service.ts:449-464, 497-508; lib/modules/course-authoring/schema.ts:107-110,145-148]
+
+## Deferred from: code review of story-2-4 (2026-09-28)
+
+- Per-Instructor video cap has a check-then-insert window: two concurrent upload initiations for different lessons can both pass `sumInstructorReservedVideoSeconds`. Inherent to the `neon-http` driver (no interactive transaction) and single-author authoring; still bounded by Cloudflare's per-upload `maxDurationSeconds`. [app/api/instructor/video-uploads/route.ts:90-104]
+- The outline's Processing / Upload-failed chip is only as fresh as the server render — no poll or refresh on the outline page, so it lags until reload. Polish beyond Story 2.4's ACs. [components/course/outline/lesson-row.tsx]
+- No fetch timeout/abort on the Cloudflare Stream calls (`createDirectUpload`, `deleteVideo`) — a hung provider ties the route up until the platform limit. Hardening pass. [lib/modules/course-authoring/stream.ts]
+- A caption note typed <700ms before navigating away is lost because `useOutlineAutosave` clears pending debounce timers on unmount (accepted by Story 2.2 AC #4, but the lesson editor is navigated away from more often). Pre-existing hook behaviour. [components/course/outline/use-outline-autosave.ts]

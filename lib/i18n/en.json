@@ -250,6 +250,58 @@
         "dndPickedUp": "Started dragging. Drop over another row to reorder.",
         "dndDropped": "Dropped. Order updated.",
         "dndCancelled": "Reorder cancelled."
+      },
+      "openLessonAria": "Open lesson: {title}",
+      "mediaStatus": {
+        "processing": "Processing",
+        "failed": "Upload failed"
+      }
+    },
+    "lesson": {
+      "loading": "Loading lesson…",
+      "typePickerLabel": "Lesson type",
+      "typePickerHelp": "Pick how this lesson delivers its content. This can’t be changed once set.",
+      "typePickerError": "Couldn’t set the lesson type. Reload and try again.",
+      "placeholder": {
+        "comingSoon": "The editor for {type} lessons is coming soon."
+      },
+      "video": {
+        "uploadCta": "Upload video",
+        "sizeHint": "Up to {minutes} minutes per lesson.",
+        "uploading": "Uploading… <num>{percent}</num>%",
+        "queued": "Waiting to process…",
+        "processing": "Processing your video — this can take a few minutes.",
+        "ready": "Video ready",
+        "readyDuration": "Video ready · <num>{duration}</num>",
+        "failed": "Upload failed. Retry?",
+        "failedReason": "Details: {reason}",
+        "retry": "Retry",
+        "retryReselectHint": "Choose the file again to retry.",
+        "replace": "Replace video",
+        "remove": "Remove video",
+        "removeConfirm": "Remove this video? The upload will be deleted.",
+        "noteLabel": "Caption note (optional)",
+        "notePlaceholder": "A short note shown with this video.",
+        "noteError": "Couldn’t save the note. Try again.",
+        "announce": {
+          "processing": "Video is processing.",
+          "ready": "Video is ready.",
+          "failed": "Video upload failed."
+        },
+        "error": {
+          "file_too_large": "That file is too large. Choose a smaller video.",
+          "bad_file_type": "That’s not a video file.",
+          "instructor_cap_reached": "You’ve reached your video storage limit. Remove a video to add another.",
+          "wrong_lesson_type": "This lesson isn’t a video lesson.",
+          "upload_unavailable": "Video upload isn’t available right now.",
+          "provider_error": "The video service had a problem. Try again.",
+          "bad_request": "Something was wrong with that upload. Try again.",
+          "forbidden": "You can’t edit this lesson.",
+          "not_found": "This lesson no longer exists.",
+          "generic": "Couldn’t upload the video. Try again.",
+          "upload_in_progress": "Another upload for this lesson is already starting. Try again in a moment.",
+          "upload_expired": "The upload didn’t finish. Choose the file and try again."
+        }
       }
     }
   }

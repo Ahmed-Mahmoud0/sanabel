@@ -44,11 +44,9 @@ import { Button } from "@/components/ui/button";
 import { CourseMetaBadges } from "@/components/course/course-meta-badges";
 import { FormMessage } from "@/components/auth/form-message";
 
+import { AutosaveIndicator } from "./autosave-indicator";
 import { ModuleBlock } from "./module-block";
-import {
-  useOutlineAutosave,
-  type OutlineSaveStatus,
-} from "./use-outline-autosave";
+import { useOutlineAutosave } from "./use-outline-autosave";
 
 type Direction = "up" | "down";
 
@@ -594,6 +592,7 @@ export function OutlineEditor({
                 <ModuleBlock
                   key={module.id}
                   module={module}
+                  courseId={courseId}
                   moduleIndex={moduleIndex}
                   moduleCount={modules.length}
                   addingLesson={addingLessonFor === module.id}
@@ -628,44 +627,3 @@ export function OutlineEditor({
   );
 }
 
-function AutosaveIndicator({
-  status,
-  editingText,
-  savedText,
-  errorText,
-  retryText,
-  onRetry,
-}: {
-  status: OutlineSaveStatus;
-  editingText: string;
-  savedText: string;
-  errorText: string;
-  retryText: string;
-  onRetry: () => void;
-}) {
-  const text =
-    status === "editing" || status === "saving"
-      ? editingText
-      : status === "saved"
-        ? savedText
-        : status === "error"
-          ? errorText
-          : "";
-
-  return (
-    <div className="flex items-center gap-2 text-body-sm text-text-secondary">
-      <span role="status" aria-live="polite">
-        {text}
-      </span>
-      {status === "error" && (
-        <button
-          type="button"
-          onClick={onRetry}
-          className="font-semibold text-primary underline-offset-4 hover:underline"
-        >
-          {retryText}
-        </button>
-      )}
-    </div>
-  );
-}

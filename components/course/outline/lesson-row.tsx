@@ -2,25 +2,34 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronDown, ChevronUp, GripVertical } from "lucide-react";
+import {
+  AlertCircle,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  GripVertical,
+  Loader2,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { LESSON_TITLE_MAX_LENGTH } from "@/lib/modules/course-authoring/course";
 import type { OutlineLesson } from "@/lib/modules/course-authoring/course";
+import { Link } from "@/lib/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 /**
  * One Lesson in the outline: an inline-editable title, a type/status meta label
- * ("Not started" until Stories 2.4–2.8 add the picker), and the AC #6
- * certificate-eligibility toggle. Story 2.3 adds a drag handle (pointer/touch
- * reorder within the Module) and explicit "Move up / Move down" buttons — the
- * full keyboard equivalent (AC #3). Lessons reorder *within their Module only*.
+ * ("Not started" until Stories 2.4–2.8 add the picker), the AC #6
+ * certificate-eligibility toggle, and (Story 2.3) a drag handle + explicit
+ * "Move up / Move down" buttons. Story 2.4 adds a chevron link into the
+ * per-Lesson editor and a Video upload-status chip.
  */
 export function LessonRow({
   lesson,
   moduleId,
+  courseId,
   index,
   count,
   disabled,
@@ -32,6 +41,7 @@ export function LessonRow({
 }: {
   lesson: OutlineLesson;
   moduleId: string;
+  courseId: string;
   index: number;
   count: number;
   disabled: boolean;
@@ -68,6 +78,11 @@ export function LessonRow({
 
   const isFirst = index === 0;
   const isLast = index === count - 1;
+
+  const mediaStatus = lesson.media?.status;
+  const showProcessingChip =
+    mediaStatus === "queued" || mediaStatus === "processing";
+  const showFailedChip = mediaStatus === "failed";
 
   return (
     <li
@@ -133,6 +148,19 @@ export function LessonRow({
           : t("outline.notStarted")}
       </span>
 
+      {showProcessingChip && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-body-sm font-medium text-warning">
+          <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden="true" />
+          {t("outline.mediaStatus.processing")}
+        </span>
+      )}
+      {showFailedChip && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-error/10 px-2 py-0.5 text-body-sm font-medium text-error">
+          <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
+          {t("outline.mediaStatus.failed")}
+        </span>
+      )}
+
       <label
         htmlFor={requiredId}
         className="flex items-center gap-2 text-body-sm text-text-secondary"
@@ -147,6 +175,14 @@ export function LessonRow({
         />
         {t("outline.requiredToggle")}
       </label>
+
+      <Link
+        href={`/courses/${courseId}/lessons/${lesson.id}`}
+        aria-label={t("outline.openLessonAria", { title: titleForLabel })}
+        className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-text-disabled hover:text-text-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        <ChevronRight className="size-4 rtl:-scale-x-100" aria-hidden="true" />
+      </Link>
     </li>
   );
 }

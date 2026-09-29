@@ -57,12 +57,21 @@ export type LessonType = (typeof LESSON_TYPES)[number];
  * `db` dependency into the client bundle. `service.ts` re-uses these for
  * `getCourseOutline`'s return type.
  */
+import type { LessonMediaStatus } from "@/lib/modules/course-authoring/media";
+
 export interface OutlineLesson {
   id: string;
   title: string;
   lessonType: LessonType | null;
   required: boolean;
   position: number;
+  /**
+   * Story 2.4 — the live media record's canonical status, or `null` when the
+   * Lesson has no media (any non-Video Lesson, or a Video Lesson with nothing
+   * uploaded yet). The outline row renders a "Processing" / "Upload failed"
+   * chip from this. `status` is one of the `LESSON_MEDIA_STATUSES`.
+   */
+  media: { status: LessonMediaStatus } | null;
 }
 
 export interface OutlineModule {

@@ -26,6 +26,7 @@ import { LessonRow } from "./lesson-row";
  */
 export function ModuleBlock({
   module,
+  courseId,
   moduleIndex,
   moduleCount,
   addingLesson,
@@ -41,6 +42,7 @@ export function ModuleBlock({
   onMoveLesson,
 }: {
   module: OutlineModule;
+  courseId: string;
   moduleIndex: number;
   moduleCount: number;
   addingLesson: boolean;
@@ -162,6 +164,7 @@ export function ModuleBlock({
                 key={lesson.id}
                 lesson={lesson}
                 moduleId={module.id}
+                courseId={courseId}
                 index={lessonIndex}
                 count={module.lessons.length}
                 disabled={fieldsDisabled}

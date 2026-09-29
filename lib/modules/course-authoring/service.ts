@@ -1,16 +1,23 @@
-import { and, asc, desc, eq, inArray, isNull, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, ne, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/lib/db/client";
 import type {
   CourseCategory,
   CourseContentLanguage,
   CourseOutline,
+  LessonType,
   OutlineLesson,
 } from "@/lib/modules/course-authoring/course";
+import {
+  effectiveMediaStatus,
+  type LessonContentBody,
+  type LessonMediaStatus,
+} from "@/lib/modules/course-authoring/media";
 import {
   course,
   courseModule,
   lesson,
+  lessonMedia,
 } from "@/lib/modules/course-authoring/schema";
 
 export type {
@@ -162,15 +169,45 @@ export async function getCourseOutline(
     .where(and(inArray(lesson.moduleId, moduleIds), isNull(lesson.removedAt)))
     .orderBy(asc(lesson.position));
 
+  // Story 2.4 — the live media record's status per Lesson (Video upload
+  // lifecycle). One extra projected query; excludes soft-removed media.
+  const lessonIds = lessons.map((l) => l.id);
+  const media =
+    lessonIds.length === 0
+      ? []
+      : await db
+          .select({
+            lessonId: lessonMedia.lessonId,
+            status: lessonMedia.status,
+            errorReason: lessonMedia.errorReason,
+            updatedAt: lessonMedia.updatedAt,
+          })
+          .from(lessonMedia)
+          .where(
+            and(
+              inArray(lessonMedia.lessonId, lessonIds),
+              isNull(lessonMedia.removedAt),
+            ),
+          );
+  const statusByLesson = new Map<string, LessonMediaStatus>();
+  for (const row of media) {
+    statusByLesson.set(
+      row.lessonId,
+      effectiveMediaStatus(row.status, row.errorReason, row.updatedAt).status,
+    );
+  }
+
   const lessonsByModule = new Map<string, OutlineLesson[]>();
   for (const m of modules) lessonsByModule.set(m.id, []);
   for (const l of lessons) {
+    const status = statusByLesson.get(l.id);
     lessonsByModule.get(l.moduleId)?.push({
       id: l.id,
       title: l.title,
       lessonType: l.lessonType,
       required: l.required,
       position: l.position,
+      media: status ? { status } : null,
     });
   }
 
@@ -580,4 +617,329 @@ export async function getLessonCourseContext(
     .limit(1);
 
   return row ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Lesson content: type pick, content-body autosave, Video media (Story 2.4)
+// ---------------------------------------------------------------------------
+
+/** Full `lesson_media` row as stored. `removedAt !== null` means soft-deleted. */
+export type LessonMediaRow = typeof lessonMedia.$inferSelect;
+
+export interface LessonEditorData {
+  lesson: {
+    id: string;
+    title: string;
+    lessonType: LessonType | null;
+    contentBody: LessonContentBody | null;
+  };
+  moduleId: string;
+  courseId: string;
+  courseTitle: string;
+  instructorId: string;
+  media: LessonMediaRow | null;
+}
+
+/**
+ * Everything the lesson editor page and the upload-initiation Route Handler
+ * need in one call: the Lesson's editable fields, its owning Course/Instructor
+ * (for the AD-6 ownership check), and its live media record. `null` when the
+ * Lesson is gone or soft-removed.
+ */
+export async function getLessonEditorData(
+  lessonId: string,
+): Promise<LessonEditorData | null> {
+  const [row] = await db
+    .select({
+      lessonId: lesson.id,
+      title: lesson.title,
+      lessonType: lesson.lessonType,
+      contentBody: lesson.contentBody,
+      moduleId: courseModule.id,
+      courseId: course.id,
+      courseTitle: course.title,
+      instructorId: course.instructorId,
+    })
+    .from(lesson)
+    .innerJoin(courseModule, eq(lesson.moduleId, courseModule.id))
+    .innerJoin(course, eq(courseModule.courseId, course.id))
+    .where(
+      and(
+        eq(lesson.id, lessonId),
+        isNull(lesson.removedAt),
+        isNull(courseModule.removedAt),
+      ),
+    )
+    .limit(1);
+
+  if (!row) return null;
+
+  const [media] = await db
+    .select()
+    .from(lessonMedia)
+    .where(
+      and(eq(lessonMedia.lessonId, lessonId), isNull(lessonMedia.removedAt)),
+    )
+    .limit(1);
+
+  return {
+    lesson: {
+      id: row.lessonId,
+      title: row.title,
+      lessonType: row.lessonType,
+      contentBody: (row.contentBody as LessonContentBody | null) ?? null,
+    },
+    moduleId: row.moduleId,
+    courseId: row.courseId,
+    courseTitle: row.courseTitle,
+    instructorId: row.instructorId,
+    media: media ?? null,
+  };
+}
+
+/**
+ * AD-4 field-group (a) — set a Lesson's type **only when it is currently
+ * `null`** (the first choice). Switching an already-set type is out of scope
+ * for Story 2.4. Returns the updated row, or `null` when nothing matched
+ * (already typed, or gone).
+ */
+export async function setLessonType(input: {
+  lessonId: string;
+  lessonType: LessonType;
+}): Promise<LessonRow | null> {
+  const [updated] = await db
+    .update(lesson)
+    .set({ lessonType: input.lessonType })
+    .where(
+      and(
+        eq(lesson.id, input.lessonId),
+        isNull(lesson.lessonType),
+        isNull(lesson.removedAt),
+      ),
+    )
+    .returning();
+
+  return updated ?? null;
+}
+
+/**
+ * AD-4 field-group (b) autosave write — the Lesson's content body. Plain
+ * `UPDATE … SET content_body = $1` (`$onUpdate` bumps `updatedAt`),
+ * last-write-wins. `contentBody` is pre-validated by the action via
+ * `parseLessonContentBody`.
+ */
+export async function updateLessonContent(input: {
+  lessonId: string;
+  contentBody: LessonContentBody;
+}): Promise<LessonRow | null> {
+  const [updated] = await db
+    .update(lesson)
+    .set({ contentBody: input.contentBody })
+    .where(and(eq(lesson.id, input.lessonId), isNull(lesson.removedAt)))
+    .returning();
+
+  return updated ?? null;
+}
+
+/**
+ * Thrown by `upsertVideoMediaForUpload` when a concurrent initiation for the
+ * same Lesson won the `lesson_media_lesson_id_uq` race. The route maps it to a
+ * 409 and releases the just-minted Cloudflare upload.
+ */
+export class MediaConflictError extends Error {
+  constructor() {
+    super("a live media record already exists for this lesson");
+    this.name = "MediaConflictError";
+  }
+}
+
+/**
+ * The write the upload-initiation Route Handler makes once Cloudflare returns a
+ * `uid`. If a live media row exists for this Lesson (retry / replace), reset it
+ * to `queued` with the new `uid` and return its previous `providerAssetId` so
+ * the caller can `deleteVideo()` the orphaned Stream asset. Otherwise insert a
+ * fresh `queued` video row.
+ */
+export async function upsertVideoMediaForUpload(input: {
+  lessonId: string;
+  providerAssetId: string;
+  sizeBytes: number;
+  reservedDurationSeconds: number;
+}): Promise<{ media: LessonMediaRow; previousAssetId: string | null }> {
+  const [existing] = await db
+    .select()
+    .from(lessonMedia)
+    .where(
+      and(
+        eq(lessonMedia.lessonId, input.lessonId),
+        isNull(lessonMedia.removedAt),
+      ),
+    )
+    .limit(1);
+
+  if (existing) {
+    const [media] = await db
+      .update(lessonMedia)
+      .set({
+        kind: "video",
+        status: "queued",
+        providerAssetId: input.providerAssetId,
+        sizeBytes: input.sizeBytes,
+        reservedDurationSeconds: input.reservedDurationSeconds,
+        durationSeconds: null,
+        errorReason: null,
+      })
+      .where(eq(lessonMedia.id, existing.id))
+      .returning();
+    return { media, previousAssetId: existing.providerAssetId };
+  }
+
+  try {
+    const [media] = await db
+      .insert(lessonMedia)
+      .values({
+        lessonId: input.lessonId,
+        kind: "video",
+        status: "queued",
+        providerAssetId: input.providerAssetId,
+        sizeBytes: input.sizeBytes,
+        reservedDurationSeconds: input.reservedDurationSeconds,
+      })
+      .returning();
+    return { media, previousAssetId: null };
+  } catch (error) {
+    if (isUniquePositionClash(error)) throw new MediaConflictError();
+    throw error;
+  }
+}
+
+/**
+ * Total reserved video seconds across an Instructor's non-removed video media
+ * (the per-Instructor cap input, AC #2). Joins media → lesson → module → course
+ * and filters `removed_at IS NULL` at every level.
+ */
+export async function sumInstructorReservedVideoSeconds(
+  instructorId: string,
+): Promise<number> {
+  const [row] = await db
+    .select({
+      total: sql<number>`coalesce(sum(coalesce(${lessonMedia.durationSeconds}, ${lessonMedia.reservedDurationSeconds})), 0)::int`,
+    })
+    .from(lessonMedia)
+    .innerJoin(lesson, eq(lessonMedia.lessonId, lesson.id))
+    .innerJoin(courseModule, eq(lesson.moduleId, courseModule.id))
+    .innerJoin(course, eq(courseModule.courseId, course.id))
+    .where(
+      and(
+        eq(course.instructorId, instructorId),
+        eq(lessonMedia.kind, "video"),
+        isNull(lessonMedia.removedAt),
+        isNull(lesson.removedAt),
+        isNull(courseModule.removedAt),
+      ),
+    );
+
+  return Number(row?.total ?? 0);
+}
+
+/** The webhook's lookup — the live media row for a Cloudflare Stream `uid`. */
+export async function getVideoMediaByProviderAssetId(
+  providerAssetId: string,
+): Promise<LessonMediaRow | null> {
+  const [row] = await db
+    .select()
+    .from(lessonMedia)
+    .where(
+      and(
+        eq(lessonMedia.providerAssetId, providerAssetId),
+        isNull(lessonMedia.removedAt),
+      ),
+    )
+    .limit(1);
+
+  return row ?? null;
+}
+
+/**
+ * Apply a Cloudflare Stream webhook's mapped status to the media row. **Never
+ * regresses a `ready` row** (`status <> 'ready'` guard) — Cloudflare can send a
+ * late in-progress webhook after `ready`. `durationSeconds` is only written
+ * when non-null so a `processing` webhook doesn't wipe a real duration.
+ */
+export async function applyWebhookStatus(input: {
+  providerAssetId: string;
+  status: LessonMediaStatus;
+  durationSeconds: number | null;
+  errorReason: string | null;
+}): Promise<void> {
+  const patch: Partial<typeof lessonMedia.$inferInsert> = {
+    status: input.status,
+    errorReason: input.errorReason,
+  };
+  if (input.durationSeconds !== null) {
+    patch.durationSeconds = input.durationSeconds;
+  }
+
+  await db
+    .update(lessonMedia)
+    .set(patch)
+    .where(
+      and(
+        eq(lessonMedia.providerAssetId, input.providerAssetId),
+        isNull(lessonMedia.removedAt),
+        ne(lessonMedia.status, "ready"),
+      ),
+    );
+}
+
+/** The lightweight read the client editor polls while an upload is in flight. */
+export async function getLessonMediaStatus(lessonId: string): Promise<{
+  status: LessonMediaStatus;
+  errorReason: string | null;
+  durationSeconds: number | null;
+} | null> {
+  const [row] = await db
+    .select({
+      status: lessonMedia.status,
+      errorReason: lessonMedia.errorReason,
+      durationSeconds: lessonMedia.durationSeconds,
+      updatedAt: lessonMedia.updatedAt,
+    })
+    .from(lessonMedia)
+    .where(
+      and(eq(lessonMedia.lessonId, lessonId), isNull(lessonMedia.removedAt)),
+    )
+    .limit(1);
+
+  if (!row) return null;
+  // A `queued` row past the upload-URL expiry reads as failed (never a
+  // non-webhook write to `status`).
+  const effective = effectiveMediaStatus(row.status, row.errorReason, row.updatedAt);
+  return {
+    status: effective.status,
+    errorReason: effective.errorReason,
+    durationSeconds: row.durationSeconds,
+  };
+}
+
+/**
+ * Soft-delete the live video media row for a Lesson (AD-11), returning its
+ * `providerAssetId` so the caller can `deleteVideo()` the Stream asset. Used by
+ * the explicit "Remove video" control and reused by Story 2.11.
+ */
+export async function removeVideoMedia(input: {
+  lessonId: string;
+}): Promise<{ previousAssetId: string | null }> {
+  const [removed] = await db
+    .update(lessonMedia)
+    .set({ removedAt: sql`now()` })
+    .where(
+      and(
+        eq(lessonMedia.lessonId, input.lessonId),
+        isNull(lessonMedia.removedAt),
+      ),
+    )
+    .returning({ providerAssetId: lessonMedia.providerAssetId });
+
+  return { previousAssetId: removed?.providerAssetId ?? null };
 }

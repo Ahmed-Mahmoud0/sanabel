@@ -1,5 +1,5 @@
 # generated: 2026-08-03
-# last_updated: 2026-09-03
+# last_updated: 2026-09-28
 # project: BMAD Test
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-08-03
-last_updated: 2026-09-03
+last_updated: 2026-09-28
 project: BMAD Test
 project_key: NOKEY
 tracking_system: file-system
@@ -62,7 +62,7 @@ development_status:
   2-1-low-friction-course-creation: done
   2-2-outline-first-module-lesson-structuring: done
   2-3-drag-reorder-outline: done
-  2-4-video-lesson-authoring-upload-lifecycle: backlog
+  2-4-video-lesson-authoring-upload-lifecycle: done
   2-5-text-lesson-authoring: backlog
   2-6-pdf-lesson-authoring-upload-lifecycle: backlog
   2-7-quiz-lesson-authoring: backlog

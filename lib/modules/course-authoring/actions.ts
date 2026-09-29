@@ -11,26 +11,38 @@ import {
   type SessionUser,
 } from "@/lib/auth/authorization";
 import {
+  isLessonType,
   LESSON_TITLE_MAX_LENGTH,
   MODULE_TITLE_MAX_LENGTH,
   parseCourseFields,
   parseOutlineTitle,
+  type LessonType,
 } from "@/lib/modules/course-authoring/course";
+import {
+  parseLessonContentBody,
+  type LessonMediaStatus,
+} from "@/lib/modules/course-authoring/media";
 import {
   addLesson,
   addModule,
   createCourse,
   getCourseById,
   getLessonCourseContext,
+  getLessonEditorData,
+  getLessonMediaStatus,
   getModuleCourseContext,
+  removeVideoMedia,
   reorderLessons,
   reorderModules,
   setLessonRequired,
+  setLessonType,
+  updateLessonContent,
   updateLessonTitle,
   updateModuleTitle,
   type OutlineLesson,
   type OutlineModule,
 } from "@/lib/modules/course-authoring/service";
+import { deleteVideo } from "@/lib/modules/course-authoring/stream";
 
 /**
  * Course Authoring Server Actions (AD-1). Same seam Story 1.4 first reconciled:
@@ -211,6 +223,7 @@ export async function addLessonAction(
           lessonType: created.lessonType,
           required: created.required,
           position: created.position,
+          media: null,
         },
       },
     };
@@ -397,5 +410,141 @@ export async function reorderLessonsAction(
     return { ok: true, data: null };
   } catch (error) {
     return toErrorResult(error, "reorderLessonsAction");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Lesson content editor: type pick, content autosave, status poll (Story 2.4)
+// ---------------------------------------------------------------------------
+
+/**
+ * Set a Lesson's type — AD-4 field-group (a), a discrete write. Only succeeds
+ * when the type is currently unset (`setLessonType` guards `lesson_type IS
+ * NULL`); a second attempt returns `type_already_set` and the client re-syncs.
+ * Switching an already-set type is out of scope for Story 2.4. No
+ * `revalidatePath` — mirrors the rename / toggle actions.
+ */
+export async function setLessonTypeAction(
+  lessonId: string,
+  lessonType: string,
+): Promise<ActionResult<{ lessonType: LessonType }>> {
+  try {
+    const auth = await requireOwner(
+      () => getLessonCourseContext(lessonId),
+      "lesson",
+    );
+    if (!auth.ok) return { ok: false, error: auth.error };
+
+    if (!isLessonType(lessonType)) {
+      return { ok: false, error: { code: "bad_request", message: "unknown lesson type" } };
+    }
+
+    const updated = await setLessonType({ lessonId, lessonType });
+    if (!updated) {
+      return {
+        ok: false,
+        error: { code: "type_already_set", message: "lesson type already chosen or gone" },
+      };
+    }
+
+    return { ok: true, data: { lessonType } };
+  } catch (error) {
+    return toErrorResult(error, "setLessonTypeAction");
+  }
+}
+
+/**
+ * Debounced autosave for AD-4 field-group (b) — the Lesson's content body. The
+ * shape rule lives in `parseLessonContentBody`, branched on the Lesson Type
+ * (Story 2.4 only authors Video: `{ note?: string }`). No `revalidatePath` —
+ * same reasoning as `renameLessonAction`.
+ */
+export async function updateLessonContentAction(
+  lessonId: string,
+  contentBody: unknown,
+): Promise<ActionResult<null>> {
+  try {
+    const data = await getLessonEditorData(lessonId);
+    if (!data) {
+      return { ok: false, error: { code: "not_found", message: "lesson not found" } };
+    }
+
+    const auth = await requireOwner(async () => data, "lesson");
+    if (!auth.ok) return { ok: false, error: auth.error };
+
+    if (!data.lesson.lessonType) {
+      return {
+        ok: false,
+        error: { code: "content_invalid", message: "lesson has no type yet" },
+      };
+    }
+
+    const parsed = parseLessonContentBody(data.lesson.lessonType, contentBody);
+    if (!parsed.ok) {
+      return { ok: false, error: { code: parsed.error, message: "invalid content body" } };
+    }
+
+    const updated = await updateLessonContent({ lessonId, contentBody: parsed.value });
+    if (!updated) {
+      return { ok: false, error: { code: "not_found", message: "lesson gone" } };
+    }
+
+    return { ok: true, data: null };
+  } catch (error) {
+    return toErrorResult(error, "updateLessonContentAction");
+  }
+}
+
+/**
+ * Owner-guarded lean read of the Video media status — the client polls this on
+ * a short interval while an upload is `queued` / `processing`. `data: null`
+ * means no video has been uploaded yet.
+ */
+export async function getVideoStatusAction(
+  lessonId: string,
+): Promise<
+  ActionResult<{
+    status: LessonMediaStatus;
+    errorReason: string | null;
+    durationSeconds: number | null;
+  } | null>
+> {
+  try {
+    const auth = await requireOwner(
+      () => getLessonCourseContext(lessonId),
+      "lesson",
+    );
+    if (!auth.ok) return { ok: false, error: auth.error };
+
+    const status = await getLessonMediaStatus(lessonId);
+    return { ok: true, data: status };
+  } catch (error) {
+    return toErrorResult(error, "getVideoStatusAction");
+  }
+}
+
+/**
+ * Soft-delete the Lesson's video media row and best-effort delete the Cloudflare
+ * Stream asset. Lets an Instructor clear a `failed` upload entirely (vs. only
+ * Retry) or drop a `ready` video.
+ */
+export async function removeVideoAction(
+  lessonId: string,
+): Promise<ActionResult<null>> {
+  try {
+    const auth = await requireOwner(
+      () => getLessonCourseContext(lessonId),
+      "lesson",
+    );
+    if (!auth.ok) return { ok: false, error: auth.error };
+
+    const { previousAssetId } = await removeVideoMedia({ lessonId });
+    // Awaited: `deleteVideo` swallows its own errors, and a fire-and-forget
+    // promise can be cut off when the serverless invocation ends.
+    if (previousAssetId) await deleteVideo(previousAssetId);
+
+    return { ok: true, data: null };
+  } catch (error) {
+    return toErrorResult(error, "removeVideoAction");
   }
 }

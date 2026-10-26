@@ -187,7 +187,8 @@ export const lesson = pgTable(
  * Implements AD-5: `status` is the canonical `queued | processing | ready |
  * failed` enum; for video it is written only by the Cloudflare Stream webhook
  * (`processing`/`ready`/`failed`) and the upload-initiation Route Handler
- * (`queued`). `provider_asset_id` is the Cloudflare Stream video `uid`.
+ * (`queued`). For a PDF (Story 2.6) the status is written synchronously by the
+ * upload-initiation (`queued`) and finalize (`ready` / `failed`) Route Handlers.
  */
 export const lessonMedia = pgTable(
   "lesson_media",
@@ -200,8 +201,20 @@ export const lessonMedia = pgTable(
       .references(() => lesson.id, { onDelete: "cascade" }),
     kind: lessonMediaKind("kind").notNull(),
     status: lessonMediaStatus("status").notNull().default("queued"),
-    // Cloudflare Stream video `uid`; set when the direct-upload URL is minted.
+    // Provider asset id: the Cloudflare Stream `uid` for a video, the R2 object
+    // key for a PDF. Set when the upload is initiated.
     providerAssetId: text("provider_asset_id"),
+    // Original client file name (PDF, display only — never used as a storage key).
+    fileName: text("file_name"),
+    // PDF replace in flight: the last `ready` PDF is kept (object + metadata)
+    // until the new upload validates, so a failed or abandoned replace never
+    // destroys the working file. Cleared when the new upload reaches `ready`,
+    // restored on "Restore previous PDF".
+    previousPdf: jsonb("previous_pdf").$type<{
+      objectKey: string;
+      fileName: string | null;
+      sizeBytes: number | null;
+    }>(),
     // Client-reported at initiation, used for the cheap pre-check only. The
     // authoritative duration comes from the webhook.
     sizeBytes: bigint("size_bytes", { mode: "number" }),

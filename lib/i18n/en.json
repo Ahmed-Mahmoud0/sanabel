@@ -329,6 +329,51 @@
           "upload_in_progress": "Another upload for this lesson is already starting. Try again in a moment.",
           "upload_expired": "The upload didn’t finish. Choose the file and try again."
         }
+      },
+      "pdf": {
+        "uploadCta": "Upload PDF",
+        "sizeHint": "PDF files up to {mb} MB per lesson.",
+        "progressLabel": "PDF upload progress",
+        "restorePrevious": "Restore previous PDF",
+        "previousKept": "Your previous PDF is still saved.",
+        "previousKeptNamed": "Your previous PDF, <file>{name}</file>, is still saved.",
+        "uploading": "Uploading… <num>{percent}</num>%",
+        "validating": "Checking your PDF…",
+        "queued": "Waiting for the upload to finish…",
+        "ready": "PDF ready",
+        "size": "<num>{mb}</num> MB",
+        "failed": "Upload failed. Retry?",
+        "failedReason": "Details: {reason}",
+        "retry": "Retry",
+        "retryReselectHint": "Choose the file again to retry.",
+        "chooseAnother": "Choose another file",
+        "replace": "Replace PDF",
+        "remove": "Remove PDF",
+        "removeConfirm": "Remove this PDF? The uploaded file will be deleted.",
+        "noteLabel": "Description (optional)",
+        "notePlaceholder": "A short note shown with this PDF.",
+        "announce": {
+          "validating": "Checking your PDF.",
+          "ready": "PDF is ready.",
+          "failed": "PDF upload failed."
+        },
+        "error": {
+          "file_too_large": "That file is too large. PDFs can be up to {mb} MB.",
+          "bad_file_type": "That’s not a PDF file. Choose a .pdf file.",
+          "instructor_cap_reached": "You’ve reached your PDF storage limit. Remove a PDF to add another.",
+          "wrong_lesson_type": "This lesson isn’t a PDF lesson.",
+          "upload_unavailable": "PDF upload isn’t available right now.",
+          "provider_error": "The file storage service had a problem. Try again.",
+          "bad_request": "Something was wrong with that upload. Try again.",
+          "forbidden": "You can’t edit this lesson.",
+          "not_found": "This lesson no longer exists.",
+          "generic": "Couldn’t upload the PDF. Try again.",
+          "upload_in_progress": "Another upload for this lesson is already starting. Try again in a moment.",
+          "upload_expired": "The upload didn’t finish. Choose the file and try again.",
+          "not_a_pdf": "That file isn’t a valid PDF. Choose another file.",
+          "too_large": "That file is too large. Choose a smaller PDF.",
+          "upload_missing": "The file didn’t arrive. Retry the upload."
+        }
       }
     }
   }

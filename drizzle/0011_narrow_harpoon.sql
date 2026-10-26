@@ -1,0 +1,1 @@
+ALTER TABLE "lesson_media" ADD COLUMN "previous_pdf" jsonb;

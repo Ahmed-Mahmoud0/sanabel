@@ -31,7 +31,9 @@ import {
   getLessonEditorData,
   getLessonMediaStatus,
   getModuleCourseContext,
+  removePdfMedia,
   removeVideoMedia,
+  restorePreviousPdf,
   reorderLessons,
   reorderModules,
   setLessonRequired,
@@ -42,6 +44,7 @@ import {
   type OutlineLesson,
   type OutlineModule,
 } from "@/lib/modules/course-authoring/service";
+import { deleteObject } from "@/lib/modules/course-authoring/storage";
 import { deleteVideo } from "@/lib/modules/course-authoring/stream";
 
 /**
@@ -546,5 +549,66 @@ export async function removeVideoAction(
     return { ok: true, data: null };
   } catch (error) {
     return toErrorResult(error, "removeVideoAction");
+  }
+}
+
+/**
+ * Soft-delete the Lesson's PDF media row and best-effort delete the R2 object.
+ * Lets an Instructor clear a `failed` upload entirely (vs. only Retry) or drop a
+ * `ready` PDF. Separate from `removeVideoAction` on purpose (AD-5: the two
+ * kinds' paths stay apart — that one calls Cloudflare Stream).
+ */
+export async function removePdfAction(
+  lessonId: string,
+): Promise<ActionResult<null>> {
+  try {
+    const auth = await requireOwner(
+      () => getLessonCourseContext(lessonId),
+      "lesson",
+    );
+    if (!auth.ok) return { ok: false, error: auth.error };
+
+    const { objectKeys } = await removePdfMedia({ lessonId });
+    // Awaited: `deleteObject` swallows its own errors, and a fire-and-forget
+    // promise can be cut off when the serverless invocation ends. Covers the
+    // current object and any kept previous PDF.
+    for (const key of objectKeys) await deleteObject(key);
+
+    return { ok: true, data: null };
+  } catch (error) {
+    return toErrorResult(error, "removePdfAction");
+  }
+}
+
+/**
+ * Put the kept previous PDF back after a failed / abandoned replace and delete
+ * the discarded attempt's object. `not_found` when there is nothing to restore
+ * (already restored, replaced again, or removed).
+ */
+export async function restorePreviousPdfAction(
+  lessonId: string,
+): Promise<ActionResult<{ fileName: string | null; sizeBytes: number | null }>> {
+  try {
+    const auth = await requireOwner(
+      () => getLessonCourseContext(lessonId),
+      "lesson",
+    );
+    if (!auth.ok) return { ok: false, error: auth.error };
+
+    const restored = await restorePreviousPdf({ lessonId });
+    if (!restored) {
+      return {
+        ok: false,
+        error: { code: "not_found", message: "no previous PDF to restore" },
+      };
+    }
+    if (restored.discardedObjectKey) await deleteObject(restored.discardedObjectKey);
+
+    return {
+      ok: true,
+      data: { fileName: restored.fileName, sizeBytes: restored.sizeBytes },
+    };
+  } catch (error) {
+    return toErrorResult(error, "restorePreviousPdfAction");
   }
 }

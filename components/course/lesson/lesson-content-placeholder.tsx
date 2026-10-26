@@ -5,14 +5,14 @@ import { useTranslations } from "next-intl";
 import type { LessonType } from "@/lib/modules/course-authoring/course";
 
 /**
- * Shown for a Lesson whose type is PDF, Quiz or Code Exercise — Stories
- * 2.6–2.8 replace this with the real editor. Keeps the type picker honest: all
- * five choices commit, Video and Text are authored.
+ * Shown for a Lesson whose type is Quiz or Code Exercise — Stories
+ * 2.7–2.8 replace this with the real editor. Keeps the type picker honest: all
+ * five choices commit, Video, Text and PDF are authored.
  */
 export function LessonContentPlaceholder({
   lessonType,
 }: {
-  lessonType: Exclude<LessonType, "video" | "text">;
+  lessonType: Exclude<LessonType, "video" | "text" | "pdf">;
 }) {
   const t = useTranslations("Course");
 

@@ -329,6 +329,51 @@
           "upload_in_progress": "هناك رفع آخر لهذا الدرس قيد البدء. حاول بعد لحظة.",
           "upload_expired": "لم يكتمل الرفع. اختر الملف وحاول مرة أخرى."
         }
+      },
+      "pdf": {
+        "uploadCta": "رفع ملف PDF",
+        "sizeHint": "ملفات PDF حتى {mb} ميغابايت لكل درس.",
+        "progressLabel": "تقدّم رفع ملف PDF",
+        "restorePrevious": "استعادة ملف PDF السابق",
+        "previousKept": "ملف PDF السابق ما زال محفوظًا.",
+        "previousKeptNamed": "ملف PDF السابق، <file>{name}</file>، ما زال محفوظًا.",
+        "uploading": "جارٍ الرفع… <num>{percent}</num>%",
+        "validating": "جارٍ فحص ملف PDF…",
+        "queued": "في انتظار اكتمال الرفع…",
+        "ready": "ملف PDF جاهز",
+        "size": "<num>{mb}</num> ميغابايت",
+        "failed": "فشل الرفع. إعادة المحاولة؟",
+        "failedReason": "التفاصيل: {reason}",
+        "retry": "إعادة المحاولة",
+        "retryReselectHint": "اختر الملف مرة أخرى لإعادة المحاولة.",
+        "chooseAnother": "اختيار ملف آخر",
+        "replace": "استبدال ملف PDF",
+        "remove": "إزالة ملف PDF",
+        "removeConfirm": "هل تريد إزالة ملف PDF هذا؟ سيُحذف الملف المرفوع.",
+        "noteLabel": "وصف (اختياري)",
+        "notePlaceholder": "ملاحظة قصيرة تظهر مع ملف PDF هذا.",
+        "announce": {
+          "validating": "جارٍ فحص ملف PDF.",
+          "ready": "ملف PDF جاهز.",
+          "failed": "فشل رفع ملف PDF."
+        },
+        "error": {
+          "file_too_large": "هذا الملف كبير جدًا. الحد الأقصى لملف PDF هو {mb} ميغابايت.",
+          "bad_file_type": "هذا ليس ملف PDF. اختر ملفًا بصيغة .pdf.",
+          "instructor_cap_reached": "لقد بلغت حدّ تخزين ملفات PDF. أزِل ملفًا لإضافة آخر.",
+          "wrong_lesson_type": "هذا الدرس ليس درس PDF.",
+          "upload_unavailable": "رفع ملفات PDF غير متاح حاليًا.",
+          "provider_error": "واجهت خدمة تخزين الملفات مشكلة. حاول مرة أخرى.",
+          "bad_request": "حدث خطأ في هذا الرفع. حاول مرة أخرى.",
+          "forbidden": "لا يمكنك تعديل هذا الدرس.",
+          "not_found": "لم يعد هذا الدرس موجودًا.",
+          "generic": "تعذّر رفع ملف PDF. حاول مرة أخرى.",
+          "upload_in_progress": "هناك رفع آخر لهذا الدرس قيد البدء. حاول بعد لحظة.",
+          "upload_expired": "لم يكتمل الرفع. اختر الملف وحاول مرة أخرى.",
+          "not_a_pdf": "هذا الملف ليس PDF صالحًا. اختر ملفًا آخر.",
+          "too_large": "هذا الملف كبير جدًا. اختر ملف PDF أصغر.",
+          "upload_missing": "لم يصل الملف. أعد محاولة الرفع."
+        }
       }
     }
   }

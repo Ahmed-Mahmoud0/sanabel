@@ -71,6 +71,20 @@
       "when": 1788436148117,
       "tag": "0009_perfect_kat_farrell",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793012856594,
+      "tag": "0010_steady_maggott",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793014851601,
+      "tag": "0011_narrow_harpoon",
+      "breakpoints": true
     }
   ]
 }

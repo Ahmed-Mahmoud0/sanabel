@@ -15,6 +15,7 @@ import { useOutlineAutosave } from "@/components/course/outline/use-outline-auto
 
 import { LessonContentPlaceholder } from "./lesson-content-placeholder";
 import { LessonTypePicker } from "./lesson-type-picker";
+import { PdfLessonPanel, type InitialPdfMedia } from "./pdf-lesson-panel";
 import { TextLessonPanel } from "./text-lesson-panel";
 import { VideoLessonPanel, type InitialVideoMedia } from "./video-lesson-panel";
 
@@ -23,7 +24,8 @@ import { VideoLessonPanel, type InitialVideoMedia } from "./video-lesson-panel";
  * (AD-4 — field-group (b), the content body, autosaves here independently of
  * the outline editor's field-group (a) title/order). Renders the type picker
  * while `lessonType` is unset, then the type-specific panel — Video (2.4) and
- * Text (2.5) are authored; the other three are placeholders until 2.6–2.8.
+ * Text (2.5) and PDF (2.6) are authored; the other two are placeholders until
+ * 2.7–2.8.
  */
 export function LessonEditor({
   courseId,
@@ -35,7 +37,9 @@ export function LessonEditor({
   initialNote,
   initialDoc,
   initialMedia,
+  initialPdf,
   streamConfigured,
+  storageConfigured,
 }: {
   courseId: string;
   courseTitle: string;
@@ -46,7 +50,9 @@ export function LessonEditor({
   initialNote: string;
   initialDoc: TextDoc | null;
   initialMedia: InitialVideoMedia | null;
+  initialPdf: InitialPdfMedia | null;
   streamConfigured: boolean;
+  storageConfigured: boolean;
 }) {
   const t = useTranslations("Course");
   const { status, schedule, flush, retry } = useOutlineAutosave();
@@ -117,6 +123,14 @@ export function LessonEditor({
           initialDoc={initialDoc}
           scheduleSave={schedule}
           flushSave={flush}
+        />
+      ) : lessonType === "pdf" ? (
+        <PdfLessonPanel
+          lessonId={lessonId}
+          initialPdf={initialPdf}
+          initialNote={initialNote}
+          storageConfigured={storageConfigured}
+          scheduleSave={schedule}
         />
       ) : (
         <LessonContentPlaceholder lessonType={lessonType} />

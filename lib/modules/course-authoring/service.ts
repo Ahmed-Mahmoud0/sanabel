@@ -10,6 +10,7 @@ import type {
 } from "@/lib/modules/course-authoring/course";
 import {
   effectiveMediaStatus,
+  MEDIA_QUEUED_EXPIRY_SECONDS,
   type LessonContentBody,
   type LessonMediaStatus,
 } from "@/lib/modules/course-authoring/media";
@@ -856,6 +857,7 @@ export async function getVideoMediaByProviderAssetId(
     .where(
       and(
         eq(lessonMedia.providerAssetId, providerAssetId),
+        eq(lessonMedia.kind, "video"),
         isNull(lessonMedia.removedAt),
       ),
     )
@@ -890,6 +892,7 @@ export async function applyWebhookStatus(input: {
     .where(
       and(
         eq(lessonMedia.providerAssetId, input.providerAssetId),
+        eq(lessonMedia.kind, "video"),
         isNull(lessonMedia.removedAt),
         ne(lessonMedia.status, "ready"),
       ),
@@ -940,10 +943,272 @@ export async function removeVideoMedia(input: {
     .where(
       and(
         eq(lessonMedia.lessonId, input.lessonId),
+        eq(lessonMedia.kind, "video"),
         isNull(lessonMedia.removedAt),
       ),
     )
     .returning({ providerAssetId: lessonMedia.providerAssetId });
 
   return { previousAssetId: removed?.providerAssetId ?? null };
+}
+
+// ---------------------------------------------------------------------------
+// PDF media (Story 2.6) — AD-5: `queued` is written by the upload-initiation
+// Route Handler, `ready` / `failed` synchronously by the finalize Route Handler.
+// ---------------------------------------------------------------------------
+
+/**
+ * The write the PDF initiation Route Handler makes once the presigned URL is
+ * minted. A live media row for this Lesson (retry / replace) is reset to
+ * `queued` with the new object key; otherwise a fresh `queued` PDF row is
+ * inserted.
+ *
+ * Replace keeps the working file: when the existing row is `ready`, its object
+ * key / name / size move to `previous_pdf` and the object is NOT deleted — it is
+ * dropped only when the new upload reaches `ready` (finalize), or restored by
+ * `restorePreviousPdf`. When the existing row is an unfinished or failed attempt,
+ * its key is returned in `staleObjectKeys` (the caller deletes it) and any
+ * `previous_pdf` already held is carried over.
+ *
+ * The update is guarded on the key it read, so two concurrent initiations (two
+ * tabs) or a Remove racing the update match zero rows and throw
+ * `MediaConflictError` (→ 409) instead of silently orphaning an object.
+ */
+export async function upsertPdfMediaForUpload(input: {
+  lessonId: string;
+  objectKey: string;
+  fileName: string;
+  sizeBytes: number;
+}): Promise<{ media: LessonMediaRow; staleObjectKeys: string[] }> {
+  const [existing] = await db
+    .select()
+    .from(lessonMedia)
+    .where(
+      and(
+        eq(lessonMedia.lessonId, input.lessonId),
+        isNull(lessonMedia.removedAt),
+      ),
+    )
+    .limit(1);
+
+  if (existing) {
+    const isReady = existing.status === "ready" && existing.providerAssetId;
+    const previousPdf = isReady
+      ? {
+          objectKey: existing.providerAssetId as string,
+          fileName: existing.fileName,
+          sizeBytes: existing.sizeBytes,
+        }
+      : existing.previousPdf;
+    const staleObjectKeys =
+      !isReady && existing.providerAssetId ? [existing.providerAssetId] : [];
+
+    const [media] = await db
+      .update(lessonMedia)
+      .set({
+        kind: "pdf",
+        status: "queued",
+        providerAssetId: input.objectKey,
+        fileName: input.fileName,
+        sizeBytes: input.sizeBytes,
+        reservedDurationSeconds: 0,
+        durationSeconds: null,
+        errorReason: null,
+        previousPdf,
+      })
+      .where(
+        and(
+          eq(lessonMedia.id, existing.id),
+          isNull(lessonMedia.removedAt),
+          sql`${lessonMedia.providerAssetId} is not distinct from ${existing.providerAssetId}`,
+        ),
+      )
+      .returning();
+    if (!media) throw new MediaConflictError();
+    return { media, staleObjectKeys };
+  }
+
+  try {
+    const [media] = await db
+      .insert(lessonMedia)
+      .values({
+        lessonId: input.lessonId,
+        kind: "pdf",
+        status: "queued",
+        providerAssetId: input.objectKey,
+        fileName: input.fileName,
+        sizeBytes: input.sizeBytes,
+        reservedDurationSeconds: 0,
+      })
+      .returning();
+    return { media, staleObjectKeys: [] };
+  } catch (error) {
+    if (isUniquePositionClash(error)) throw new MediaConflictError();
+    throw error;
+  }
+}
+
+/**
+ * Record the finalize validation outcome. Idempotent and race-safe: the
+ * `provider_asset_id = key` + `status = 'queued'` guard means a double submit,
+ * or a finalize that lost to a concurrent replace (new key) or remove, matches
+ * zero rows and returns `null` — it can never flip a newer upload's row.
+ * `ready` clears `previous_pdf` (the caller deletes that old object); `failed`
+ * keeps it so the Instructor can restore the previous PDF.
+ */
+export async function finalizePdfMedia(input: {
+  lessonId: string;
+  objectKey: string;
+  outcome:
+    | { status: "ready"; sizeBytes: number }
+    | { status: "failed"; errorReason: string };
+}): Promise<LessonMediaRow | null> {
+  const patch: Partial<typeof lessonMedia.$inferInsert> =
+    input.outcome.status === "ready"
+      ? {
+          status: "ready",
+          sizeBytes: input.outcome.sizeBytes,
+          errorReason: null,
+          previousPdf: null,
+        }
+      : { status: "failed", errorReason: input.outcome.errorReason };
+
+  const [updated] = await db
+    .update(lessonMedia)
+    .set(patch)
+    .where(
+      and(
+        eq(lessonMedia.lessonId, input.lessonId),
+        eq(lessonMedia.providerAssetId, input.objectKey),
+        eq(lessonMedia.kind, "pdf"),
+        eq(lessonMedia.status, "queued"),
+        isNull(lessonMedia.removedAt),
+      ),
+    )
+    .returning();
+
+  return updated ?? null;
+}
+
+/**
+ * Put the kept previous PDF back after a failed / abandoned replace. Only acts
+ * on a non-`ready` row that holds a `previous_pdf`, and is guarded on the key it
+ * read. Returns the restored file's metadata and the discarded attempt's object
+ * key (the caller deletes it), or `null` when there is nothing to restore.
+ */
+export async function restorePreviousPdf(input: {
+  lessonId: string;
+}): Promise<{
+  fileName: string | null;
+  sizeBytes: number | null;
+  discardedObjectKey: string | null;
+} | null> {
+  const [row] = await db
+    .select()
+    .from(lessonMedia)
+    .where(
+      and(
+        eq(lessonMedia.lessonId, input.lessonId),
+        eq(lessonMedia.kind, "pdf"),
+        isNull(lessonMedia.removedAt),
+      ),
+    )
+    .limit(1);
+
+  if (!row || !row.previousPdf || row.status === "ready") return null;
+
+  const [restored] = await db
+    .update(lessonMedia)
+    .set({
+      status: "ready",
+      providerAssetId: row.previousPdf.objectKey,
+      fileName: row.previousPdf.fileName,
+      sizeBytes: row.previousPdf.sizeBytes,
+      errorReason: null,
+      previousPdf: null,
+    })
+    .where(
+      and(
+        eq(lessonMedia.id, row.id),
+        isNull(lessonMedia.removedAt),
+        sql`${lessonMedia.providerAssetId} is not distinct from ${row.providerAssetId}`,
+      ),
+    )
+    .returning();
+
+  if (!restored) return null;
+  return {
+    fileName: restored.fileName,
+    sizeBytes: restored.sizeBytes,
+    discardedObjectKey: row.providerAssetId,
+  };
+}
+
+/**
+ * Total stored PDF bytes across an Instructor's non-removed PDF media (the
+ * per-Instructor cap input). Counts what actually occupies storage: a `ready`
+ * row, a `queued` row younger than `MEDIA_QUEUED_EXPIRY_SECONDS` (an in-flight
+ * upload already reserves space), and any kept `previous_pdf`. `failed` and
+ * expired-`queued` rows hold no object and count only their kept previous.
+ */
+export async function sumInstructorPdfBytes(
+  instructorId: string,
+): Promise<number> {
+  const [row] = await db
+    .select({
+      total: sql<string>`coalesce(sum(
+        (case
+          when ${lessonMedia.status} = 'ready' then coalesce(${lessonMedia.sizeBytes}, 0)
+          when ${lessonMedia.status} = 'queued'
+            and ${lessonMedia.updatedAt} > now() - make_interval(secs => ${MEDIA_QUEUED_EXPIRY_SECONDS})
+            then coalesce(${lessonMedia.sizeBytes}, 0)
+          else 0
+        end)
+        + coalesce((${lessonMedia.previousPdf}->>'sizeBytes')::bigint, 0)
+      ), 0)::bigint`,
+    })
+    .from(lessonMedia)
+    .innerJoin(lesson, eq(lessonMedia.lessonId, lesson.id))
+    .innerJoin(courseModule, eq(lesson.moduleId, courseModule.id))
+    .innerJoin(course, eq(courseModule.courseId, course.id))
+    .where(
+      and(
+        eq(course.instructorId, instructorId),
+        eq(lessonMedia.kind, "pdf"),
+        isNull(lessonMedia.removedAt),
+        isNull(lesson.removedAt),
+        isNull(courseModule.removedAt),
+      ),
+    );
+
+  return Number(row?.total ?? 0);
+}
+
+/**
+ * Soft-delete the live PDF media row for a Lesson (AD-11), returning every
+ * object key it held (the current one and any kept previous PDF) so the caller
+ * can `deleteObject()` them.
+ */
+export async function removePdfMedia(input: {
+  lessonId: string;
+}): Promise<{ objectKeys: string[] }> {
+  const [removed] = await db
+    .update(lessonMedia)
+    .set({ removedAt: sql`now()` })
+    .where(
+      and(
+        eq(lessonMedia.lessonId, input.lessonId),
+        eq(lessonMedia.kind, "pdf"),
+        isNull(lessonMedia.removedAt),
+      ),
+    )
+    .returning({
+      providerAssetId: lessonMedia.providerAssetId,
+      previousPdf: lessonMedia.previousPdf,
+    });
+
+  const objectKeys: string[] = [];
+  if (removed?.providerAssetId) objectKeys.push(removed.providerAssetId);
+  if (removed?.previousPdf?.objectKey) objectKeys.push(removed.previousPdf.objectKey);
+  return { objectKeys };
 }

@@ -10,8 +10,8 @@
  * AD-5: the media record carries one canonical status enum
  * (`queued | processing | ready | failed`). AD-4: field-group (b) "content body"
  * is one `jsonb` column (`lesson.content_body`) with one write path — for a
- * Video Lesson its shape is `{ note?: string }`, for a Text Lesson (Story 2.5)
- * `{ doc?: TextDoc }` (see `text-body.ts`).
+ * Video or PDF Lesson its shape is `{ note?: string }`, for a Text Lesson
+ * (Story 2.5) `{ doc?: TextDoc }` (see `text-body.ts`).
  */
 
 import { parseTextBody, type TextContentBody } from "./text-body";
@@ -142,27 +142,102 @@ export function effectiveMediaStatus(
 export const VIDEO_NOTE_MAX_LENGTH = 500;
 
 /**
+ * FR-11 PDF caps (Story 2.6).
+ *
+ * `[ASSUMPTION]` — the PRD only says "capped per Lesson and per Instructor";
+ * no PDF number exists. R2 has no egress fees, so these bound storage only.
+ * Adjust like the `VIDEO_*` caps: a one-line edit, no schema change.
+ */
+
+/** Per-Lesson cap — checked at initiation and re-checked against the real object at finalize. */
+export const PDF_MAX_BYTES_PER_LESSON = 25 * 1024 * 1024; // 25 MB
+
+/** Per-Instructor cap — a *total stored* sum of `size_bytes` over non-removed PDF media. */
+export const PDF_MAX_BYTES_PER_INSTRUCTOR = 500 * 1024 * 1024; // 500 MB
+
+/** Exactly one accepted MIME type — NFR4 "no executable or unexpected file types". */
+export const PDF_ALLOWED_MIME_TYPE = "application/pdf";
+
+/** How many leading bytes the validator inspects (the spec allows the header within the first 1024). */
+export const PDF_MIME_SNIFF_BYTES = 1024;
+
+/**
+ * Presigned-PUT lifetime. Must stay below `MEDIA_QUEUED_EXPIRY_SECONDS` so a row
+ * whose URL expired un-used reads as failed (`upload_expired`).
+ */
+export const PDF_UPLOAD_URL_EXPIRY_SECONDS = 15 * 60;
+
+/** Failed-state `errorReason` sentinels for PDFs — the UI maps them to copy. */
+export const PDF_ERROR_NOT_A_PDF = "not_a_pdf";
+export const PDF_ERROR_TOO_LARGE = "too_large";
+export const PDF_ERROR_MISSING = "upload_missing";
+
+export function isPdfMime(value: unknown): value is typeof PDF_ALLOWED_MIME_TYPE {
+  return value === PDF_ALLOWED_MIME_TYPE;
+}
+
+const PDF_MAGIC = [0x25, 0x50, 0x44, 0x46, 0x2d]; // "%PDF-"
+
+/**
+ * The "valid PDF" check: the ASCII bytes `%PDF-` occur within the first
+ * `PDF_MIME_SNIFF_BYTES` bytes. Pure and Node-API-free so it runs anywhere.
+ * Proves the file is not a renamed executable/HTML/zip — it does **not** prove
+ * the PDF is well-formed or free of active content.
+ */
+export function looksLikePdf(head: Uint8Array): boolean {
+  const limit = Math.min(head.length, PDF_MIME_SNIFF_BYTES) - PDF_MAGIC.length;
+  for (let i = 0; i <= limit; i++) {
+    let match = true;
+    for (let j = 0; j < PDF_MAGIC.length; j++) {
+      if (head[i + j] !== PDF_MAGIC[j]) {
+        match = false;
+        break;
+      }
+    }
+    if (match) return true;
+  }
+  return false;
+}
+
+/** Soft cap on the PDF Lesson's optional description note. */
+export const PDF_NOTE_MAX_LENGTH = VIDEO_NOTE_MAX_LENGTH;
+
+/**
  * The content body for a Video Lesson — AD-4 field-group (b), stored in
- * `lesson.content_body` (jsonb). Stories 2.6–2.8 widen the union below with
+ * `lesson.content_body` (jsonb). Stories 2.7–2.8 widen the union below with
  * their own type-specific shapes in this same column.
  */
 export interface VideoContentBody {
   note?: string;
 }
 
-export type LessonContentBody = VideoContentBody | TextContentBody;
+/** A PDF Lesson's content body (Story 2.6): the same optional note as Video. */
+export interface PdfContentBody {
+  note?: string;
+}
 
-/** The caption note of a stored Video body ("" for any other / empty body). */
-export function videoNoteOf(body: LessonContentBody | null | undefined): string {
+export type LessonContentBody =
+  | VideoContentBody
+  | PdfContentBody
+  | TextContentBody;
+
+/** The note of a stored Video / PDF body ("" for any other / empty body). */
+export function lessonNoteOf(body: LessonContentBody | null | undefined): string {
   if (!body || !("note" in body)) return "";
   return typeof body.note === "string" ? body.note : "";
 }
+
+/** Alias kept for the Video call sites. */
+export const videoNoteOf = lessonNoteOf;
+/** The description note of a stored PDF body. */
+export const pdfNoteOf = lessonNoteOf;
 
 export type ParseLessonContentBodyResult =
   | { ok: true; value: LessonContentBody }
   | { ok: false; error: "content_invalid" };
 
-function parseVideoBody(raw: unknown): ParseLessonContentBodyResult {
+/** `{ note?: string }` — the Video caption note and the PDF description note. */
+function parseNoteBody(raw: unknown): ParseLessonContentBodyResult {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     return { ok: false, error: "content_invalid" };
   }
@@ -194,8 +269,8 @@ function parseVideoBody(raw: unknown): ParseLessonContentBodyResult {
  * `updateLessonContentAction` and the client editor both call this rather than
  * re-spelling the checks (same pattern as `parseCourseFields` / `parseOutlineTitle`).
  *
- * Video and Text are authored today; the other Lesson Types return
- * `content_invalid` here until Stories 2.6–2.8 add their branches.
+ * Video, Text and PDF are authored today; the other Lesson Types return
+ * `content_invalid` here until Stories 2.7–2.8 add their branches.
  */
 export function parseLessonContentBody(
   lessonType: string,
@@ -203,7 +278,8 @@ export function parseLessonContentBody(
 ): ParseLessonContentBodyResult {
   switch (lessonType) {
     case "video":
-      return parseVideoBody(raw);
+    case "pdf":
+      return parseNoteBody(raw);
     case "text":
       return parseTextBody(raw);
     default:

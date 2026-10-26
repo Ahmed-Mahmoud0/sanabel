@@ -1,0 +1,1 @@
+ALTER TABLE "lesson_media" ADD COLUMN "file_name" text;

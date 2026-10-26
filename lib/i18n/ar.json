@@ -265,6 +265,33 @@
       "placeholder": {
         "comingSoon": "محرّر دروس {type} قادم قريبًا."
       },
+      "text": {
+        "editorLabel": "نص الدرس",
+        "placeholder": "ابدأ الكتابة… اكتب ``` ثم اسم لغة لإضافة مقطع برمجي.",
+        "toolbarLabel": "تنسيق النص",
+        "bold": "غامق",
+        "italic": "مائل",
+        "code": "كود مضمّن",
+        "heading2": "عنوان",
+        "heading3": "عنوان فرعي",
+        "bulletList": "قائمة نقطية",
+        "orderedList": "قائمة مرقّمة",
+        "quote": "اقتباس",
+        "link": "رابط",
+        "codeBlock": "مقطع برمجي",
+        "undo": "تراجع",
+        "redo": "إعادة",
+        "codeLanguageLabel": "لغة الكود",
+        "codeLanguagePlain": "نص عادي",
+        "linkUrlLabel": "عنوان الرابط",
+        "linkApply": "تطبيق",
+        "linkRemove": "إزالة الرابط",
+        "linkCancel": "إلغاء",
+        "linkInvalid": "أدخل عنوان ويب يبدأ بـ http:// أو https://، أو رابط بريد إلكتروني.",
+        "error": {
+          "tooLong": "هذا الدرس طويل أو معقّد أكثر من أن يُحفظ. بسّطه أو قسّمه إلى درسين."
+        }
+      },
       "video": {
         "uploadCta": "رفع فيديو",
         "sizeHint": "حتى {minutes} دقيقة لكل درس.",

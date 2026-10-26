@@ -10,8 +10,11 @@
  * AD-5: the media record carries one canonical status enum
  * (`queued | processing | ready | failed`). AD-4: field-group (b) "content body"
  * is one `jsonb` column (`lesson.content_body`) with one write path — for a
- * Video Lesson its shape is `{ note?: string }`.
+ * Video Lesson its shape is `{ note?: string }`, for a Text Lesson (Story 2.5)
+ * `{ doc?: TextDoc }` (see `text-body.ts`).
  */
+
+import { parseTextBody, type TextContentBody } from "./text-body";
 
 /** One membership-guard factory instead of a hand-rolled body per enum. */
 function memberOf<T extends string>(
@@ -140,36 +143,26 @@ export const VIDEO_NOTE_MAX_LENGTH = 500;
 
 /**
  * The content body for a Video Lesson — AD-4 field-group (b), stored in
- * `lesson.content_body` (jsonb). Stories 2.5–2.8 widen this union with their
- * own type-specific shapes in this same column.
+ * `lesson.content_body` (jsonb). Stories 2.6–2.8 widen the union below with
+ * their own type-specific shapes in this same column.
  */
 export interface VideoContentBody {
   note?: string;
 }
 
-export type LessonContentBody = VideoContentBody;
+export type LessonContentBody = VideoContentBody | TextContentBody;
+
+/** The caption note of a stored Video body ("" for any other / empty body). */
+export function videoNoteOf(body: LessonContentBody | null | undefined): string {
+  if (!body || !("note" in body)) return "";
+  return typeof body.note === "string" ? body.note : "";
+}
 
 export type ParseLessonContentBodyResult =
   | { ok: true; value: LessonContentBody }
   | { ok: false; error: "content_invalid" };
 
-/**
- * Trim + validate a Lesson's content body from an untrusted source, branched on
- * the Lesson Type. The single home for the field-group (b) shape rule —
- * `updateLessonContentAction` and the client editor both call this rather than
- * re-spelling the checks (same pattern as `parseCourseFields` / `parseOutlineTitle`).
- *
- * Story 2.4 only authors Video; the other Lesson Types return `content_invalid`
- * here until Stories 2.5–2.8 add their branches.
- */
-export function parseLessonContentBody(
-  lessonType: string,
-  raw: unknown,
-): ParseLessonContentBodyResult {
-  if (lessonType !== "video") {
-    return { ok: false, error: "content_invalid" };
-  }
-
+function parseVideoBody(raw: unknown): ParseLessonContentBodyResult {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     return { ok: false, error: "content_invalid" };
   }
@@ -193,4 +186,27 @@ export function parseLessonContentBody(
   }
 
   return { ok: true, value: note === "" ? {} : { note } };
+}
+
+/**
+ * Trim + validate a Lesson's content body from an untrusted source, branched on
+ * the Lesson Type. The single home for the field-group (b) shape rule —
+ * `updateLessonContentAction` and the client editor both call this rather than
+ * re-spelling the checks (same pattern as `parseCourseFields` / `parseOutlineTitle`).
+ *
+ * Video and Text are authored today; the other Lesson Types return
+ * `content_invalid` here until Stories 2.6–2.8 add their branches.
+ */
+export function parseLessonContentBody(
+  lessonType: string,
+  raw: unknown,
+): ParseLessonContentBodyResult {
+  switch (lessonType) {
+    case "video":
+      return parseVideoBody(raw);
+    case "text":
+      return parseTextBody(raw);
+    default:
+      return { ok: false, error: "content_invalid" };
+  }
 }

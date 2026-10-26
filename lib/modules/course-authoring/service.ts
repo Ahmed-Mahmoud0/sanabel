@@ -636,6 +636,8 @@ export interface LessonEditorData {
   moduleId: string;
   courseId: string;
   courseTitle: string;
+  /** The Course's one content language (AD-9) — a Text Lesson's base direction. */
+  contentLanguage: CourseContentLanguage;
   instructorId: string;
   media: LessonMediaRow | null;
 }
@@ -658,6 +660,7 @@ export async function getLessonEditorData(
       moduleId: courseModule.id,
       courseId: course.id,
       courseTitle: course.title,
+      contentLanguage: course.contentLanguage,
       instructorId: course.instructorId,
     })
     .from(lesson)
@@ -692,6 +695,7 @@ export async function getLessonEditorData(
     moduleId: row.moduleId,
     courseId: row.courseId,
     courseTitle: row.courseTitle,
+    contentLanguage: row.contentLanguage,
     instructorId: row.instructorId,
     media: media ?? null,
   };

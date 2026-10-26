@@ -2,7 +2,11 @@ import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 
 import { can, getSessionUser, isOwner } from "@/lib/auth/authorization";
-import { effectiveMediaStatus } from "@/lib/modules/course-authoring/media";
+import {
+  effectiveMediaStatus,
+  videoNoteOf,
+} from "@/lib/modules/course-authoring/media";
+import { textDocOf } from "@/lib/modules/course-authoring/text-body";
 import { getLessonEditorData } from "@/lib/modules/course-authoring/service";
 import { isStreamConfigured } from "@/lib/modules/course-authoring/stream";
 import { LessonEditor } from "@/components/course/lesson/lesson-editor";
@@ -43,7 +47,9 @@ export default async function LessonEditorPage({
       lessonId={lessonId}
       lessonTitle={data.lesson.title}
       lessonType={data.lesson.lessonType}
-      initialNote={data.lesson.contentBody?.note ?? ""}
+      contentLanguage={data.contentLanguage}
+      initialNote={videoNoteOf(data.lesson.contentBody)}
+      initialDoc={textDocOf(data.lesson.contentBody)}
       initialMedia={
         data.media
           ? {

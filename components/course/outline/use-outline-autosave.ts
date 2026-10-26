@@ -41,6 +41,12 @@ export interface OutlineAutosave {
    * the same split Story 2.2 landed for add / certificate-toggle failures).
    */
   save: (fieldKey: string, saver: Saver) => void;
+  /**
+   * Dispatch every still-debounced save now. For callers that know the user is
+   * about to leave (e.g. the editor losing focus before a navigation) — the save
+   * then goes out from the page that owns the Server Action.
+   */
+  flush: () => void;
   /** Re-run every field whose last save failed. */
   retry: () => void;
 }
@@ -183,12 +189,35 @@ export function useOutlineAutosave(): OutlineAutosave {
     for (const [fieldKey, saver] of entries) void runSave(fieldKey, saver);
   }, [runSave]);
 
+  const flush = useCallback(() => {
+    for (const [fieldKey, timer] of Array.from(timers.current.entries())) {
+      clearTimeout(timer);
+      timers.current.delete(fieldKey);
+      const saver = queued.current.get(fieldKey);
+      queued.current.delete(fieldKey);
+      if (saver) void runSave(fieldKey, saver);
+    }
+  }, [runSave]);
+
+  // Last-resort fallback on unmount: run (don't drop) still-queued savers. This
+  // is best effort only — after a client navigation the request is POSTed to the
+  // *destination* route, which may not include this Server Action, so callers
+  // that care (the Text editor) `flush()` earlier, on blur, while still on the
+  // page that owns the action.
   useEffect(() => {
     const pending = timers.current;
+    const waiting = queued.current;
     return () => {
       for (const timer of pending.values()) clearTimeout(timer);
+      pending.clear();
+      for (const saver of waiting.values()) {
+        void Promise.resolve()
+          .then(saver)
+          .catch(() => {});
+      }
+      waiting.clear();
     };
   }, []);
 
-  return { status, schedule, save, retry };
+  return { status, schedule, save, flush, retry };
 }

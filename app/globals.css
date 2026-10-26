@@ -23,6 +23,12 @@
   --text-secondary: #5c5548;
   --text-disabled: #a79e8e;
   --border-hairline: #e4dac4;
+  --hl-keyword: #8a3b12;
+  --hl-string: #1f6b43;
+  --hl-number: #7a4f00;
+  --hl-comment: #5c5548;
+  --hl-builtin: #1d4f8a;
+  --hl-type: #6b2f8a;
 }
 
 /* System-preference dark mode (auto), overridable by the .dark/.light
@@ -45,6 +51,12 @@
     --text-secondary: #b9af9b;
     --text-disabled: #6e6656;
     --border-hairline: #332d22;
+    --hl-keyword: #f0a070;
+    --hl-string: #8fd19e;
+    --hl-number: #e6c15a;
+    --hl-comment: #a39a86;
+    --hl-builtin: #8ab8f0;
+    --hl-type: #c9a0e8;
   }
 }
 
@@ -65,6 +77,12 @@
   --text-secondary: #b9af9b;
   --text-disabled: #6e6656;
   --border-hairline: #332d22;
+  --hl-keyword: #f0a070;
+  --hl-string: #8fd19e;
+  --hl-number: #e6c15a;
+  --hl-comment: #a39a86;
+  --hl-builtin: #8ab8f0;
+  --hl-type: #c9a0e8;
 }
 
 .light {
@@ -84,6 +102,12 @@
   --text-secondary: #5c5548;
   --text-disabled: #a79e8e;
   --border-hairline: #e4dac4;
+  --hl-keyword: #8a3b12;
+  --hl-string: #1f6b43;
+  --hl-number: #7a4f00;
+  --hl-comment: #5c5548;
+  --hl-builtin: #1d4f8a;
+  --hl-type: #6b2f8a;
 }
 
 @theme inline {
@@ -172,4 +196,122 @@
   html {
     @apply font-sans;
   }
+}
+
+/* Text Lesson prose (Story 2.5). Shared by the authoring editor and every
+   read-only renderer. Logical properties only; code is fixed LTR + monospace
+   regardless of the document or page direction (AC #1 / #3, UX-DR5). The
+   syntax-token colours are theme variables (light + dark above), not a stock
+   highlight.js stylesheet. */
+.lesson-prose .lesson-prose-content {
+  min-block-size: 12rem;
+  padding-block: 0.75rem;
+  padding-inline: 1rem;
+  outline: none;
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.lesson-prose[data-readonly] .lesson-prose-content {
+  min-block-size: 0;
+}
+.lesson-prose .lesson-prose-content > * + * {
+  margin-block-start: 0.75em;
+}
+.lesson-prose h2 {
+  font-size: var(--text-heading-md);
+  line-height: var(--text-heading-md--line-height);
+  font-weight: 600;
+}
+.lesson-prose h3 {
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  font-weight: 600;
+}
+.lesson-prose ul,
+.lesson-prose ol {
+  padding-inline-start: 1.5em;
+}
+.lesson-prose ul {
+  list-style: disc;
+}
+.lesson-prose ol {
+  list-style: decimal;
+}
+.lesson-prose li > * + * {
+  margin-block-start: 0.35em;
+}
+.lesson-prose blockquote {
+  border-inline-start: 3px solid var(--border-hairline);
+  padding-inline-start: 1em;
+  color: var(--text-secondary);
+}
+.lesson-prose a {
+  /* --secondary (not --primary): wheat-gold on white is < 4.5:1 for body text */
+  color: var(--secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.lesson-prose code {
+  font-family: var(--font-code);
+  font-size: var(--text-code);
+}
+.lesson-prose :not(pre) > code {
+  direction: ltr;
+  unicode-bidi: isolate;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  padding-inline: 0.3em;
+}
+.lesson-prose pre {
+  direction: ltr;
+  text-align: start;
+  unicode-bidi: isolate;
+  white-space: pre;
+  overflow-x: auto;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  padding-block: 0.75rem;
+  padding-inline: 1rem;
+  line-height: var(--text-code--line-height);
+}
+.lesson-prose pre code {
+  display: block;
+  color: var(--text-primary);
+}
+.lesson-prose .hljs-keyword,
+.lesson-prose .hljs-literal,
+.lesson-prose .hljs-selector-tag,
+.lesson-prose .hljs-meta {
+  color: var(--hl-keyword);
+}
+.lesson-prose .hljs-string,
+.lesson-prose .hljs-regexp,
+.lesson-prose .hljs-symbol {
+  color: var(--hl-string);
+}
+.lesson-prose .hljs-number,
+.lesson-prose .hljs-attr,
+.lesson-prose .hljs-attribute {
+  color: var(--hl-number);
+}
+.lesson-prose .hljs-comment,
+.lesson-prose .hljs-quote {
+  color: var(--hl-comment);
+  font-style: italic;
+}
+.lesson-prose .hljs-built_in,
+.lesson-prose .hljs-title,
+.lesson-prose .hljs-section,
+.lesson-prose .hljs-name {
+  color: var(--hl-builtin);
+}
+.lesson-prose .hljs-type,
+.lesson-prose .hljs-variable,
+.lesson-prose .hljs-params,
+.lesson-prose .hljs-selector-class,
+.lesson-prose .hljs-selector-id {
+  color: var(--hl-type);
 }

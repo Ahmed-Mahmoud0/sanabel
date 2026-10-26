@@ -265,6 +265,33 @@
       "placeholder": {
         "comingSoon": "The editor for {type} lessons is coming soon."
       },
+      "text": {
+        "editorLabel": "Lesson text",
+        "placeholder": "Start writing… Type ``` then a language to add a code block.",
+        "toolbarLabel": "Text formatting",
+        "bold": "Bold",
+        "italic": "Italic",
+        "code": "Inline code",
+        "heading2": "Heading",
+        "heading3": "Subheading",
+        "bulletList": "Bulleted list",
+        "orderedList": "Numbered list",
+        "quote": "Quote",
+        "link": "Link",
+        "codeBlock": "Code block",
+        "undo": "Undo",
+        "redo": "Redo",
+        "codeLanguageLabel": "Code language",
+        "codeLanguagePlain": "Plain text",
+        "linkUrlLabel": "Link address",
+        "linkApply": "Apply",
+        "linkRemove": "Remove link",
+        "linkCancel": "Cancel",
+        "linkInvalid": "Enter a web address starting with http:// or https://, or an email link.",
+        "error": {
+          "tooLong": "This lesson is too long or too complex to save. Simplify it or split it into two lessons."
+        }
+      },
       "video": {
         "uploadCta": "Upload video",
         "sizeHint": "Up to {minutes} minutes per lesson.",

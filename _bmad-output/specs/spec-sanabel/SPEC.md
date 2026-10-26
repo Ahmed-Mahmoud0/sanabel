@@ -89,7 +89,7 @@ Ahmed creates and publishes one full multi-lesson Course end-to-end without exte
 
 ## Assumptions
 
-- FR-11 upload caps (draft: 60 min video/Lesson, 20 hrs stored video/Instructor/month) are not yet confirmed by Ahmed; the architecture's cost review also found the addendum's Cloudflare Stream pricing figures reversed (actual ~$1/1,000 min stored + $5/1,000 min delivered, not $5/$1 as the addendum states) — real cap math needs a correction pass before these values are finalized.
+- FR-11 upload caps (draft: 60 min video/Lesson, 20 hrs stored video/Instructor/month) are not yet confirmed by Ahmed; Cloudflare Stream pricing confirmed from the live dashboard (2026-10-26): $5 per 1,000 minutes stored + $1 per 1,000 minutes delivered — the PRD addendum's figures were correct; the architecture review's "reversed" claim was wrong. The deployed account has a 1,000-minute storage allowance ($5/mo), so the implemented caps are 60 min/Lesson and 300 min (5 hrs) stored per Instructor, total (not per month) — still adjustable, see `lib/modules/course-authoring/media.ts`.
 - The Course detail page (browse listing, full outline titles, instructor bio, ratings) is visible pre-signup; only Lesson content requires Enrollment — a deliberate narrowing of the brief's literal "sign-in required to view any course" line, driven by Lina's pre-commit decision moment in UJ-2.
 - Comments are flat/chronological, not threaded — no nested-reply data model in v1.
 - Bilingual EN/AR + full RTL v1 scope is inferred from the product name Sanabel's Arabic etymology, not a regional audience confirmed directly by Ahmed; the brief itself left "who this serves (region/community)" open. Accepted as-is into the finalized PRD.
@@ -103,7 +103,7 @@ Ahmed creates and publishes one full multi-lesson Course end-to-end without exte
 
 - Should a lightweight pre-publish review queue exist for Public Courses as volume grows, or does Unlisted-during-buildout plus no gate on Public stay sufficient?
 - Should Certificates move to a verifiable public-ID model before learners start citing them to employers? (Certificate rows should stay ID-structured now so this stays cheap to retrofit later.)
-- What upload caps (size, video duration, or monthly volume) should actually bound Cloudflare Stream cost, given the addendum's cost figures were found reversed during architecture review (see Assumptions)?
+- What upload caps (size, video duration, or monthly volume) should actually bound Cloudflare Stream cost, given Stream's $5/1,000 min stored + $1/1,000 min delivered pricing and the account's storage allowance (see Assumptions)?
 - Should quiz/exercise "required" status be settable per-Lesson beyond the current opt-out default, so some Lessons can be marked supplementary/non-blocking for Certificate eligibility?
 - Should Sanabel provide captions/transcripts for Video Lessons beyond Cloudflare Stream's built-in auto-captions?
 - Should learners be able to delete their account and export their data in v1?

@@ -49,11 +49,12 @@ export const isLessonMediaStatus = memberOf(LESSON_MEDIA_STATUSES);
  * FR-11 upload caps.
  *
  * `[ASSUMPTION]` — every number here is a draft Ahmed still owes a decision on.
- * The PRD's draft is "60 min video/Lesson, 20 hrs stored video/Instructor/month";
- * the architecture's cost review found the addendum's Cloudflare Stream pricing
- * figures reversed (actual ≈ $1/1,000 min stored + $5/1,000 min delivered), so
- * the real cap math is unsettled — a live SPEC Open Question. Adjust these the
- * same way `COURSE_CATEGORIES` is adjusted: a one-line edit, no schema change.
+ * The PRD's draft was "60 min video/Lesson, 20 hrs stored video/Instructor/month".
+ * Stream pricing (confirmed on the live dashboard, 2026-10-26) is $5/1,000 min
+ * stored + $1/1,000 min delivered, and storage is a purchased allowance — the
+ * deployed account has 1,000 minutes. The per-Instructor cap below is sized
+ * against that allowance, not the PRD draft. Adjust these the same way
+ * `COURSE_CATEGORIES` is adjusted: a one-line edit, no schema change.
  */
 
 /**
@@ -70,7 +71,7 @@ export const VIDEO_MAX_DURATION_SECONDS_PER_LESSON = 3600; // 60 min
  * The PRD's "per month" wording is dropped for v1 (there is no monthly-reset
  * infrastructure); a total cap is the honest v1 shape.
  */
-export const VIDEO_MAX_RESERVED_SECONDS_PER_INSTRUCTOR = 72_000; // 20 hours
+export const VIDEO_MAX_RESERVED_SECONDS_PER_INSTRUCTOR = 18_000; // 300 min (5 hours)
 
 /**
  * Coarse byte ceiling for the cheap client-reported pre-check, so an obviously
